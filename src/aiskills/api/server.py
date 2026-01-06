@@ -23,6 +23,8 @@ from .models import (
     SkillInfo,
     SuggestRequest,
     SuggestResponse,
+    UseRequest,
+    UseResponse,
 )
 
 
@@ -129,7 +131,7 @@ def create_app():
         if skill is None:
             raise HTTPException(status_code=404, detail=f"Skill not found: {name}")
 
-        content = manager.read(name, raw=raw) if not raw else skill.content
+        content = skill.content if raw else manager.read(name)
 
         return ReadResponse(
             name=name,
@@ -293,6 +295,29 @@ def create_app():
         except Exception:
             return SuggestResponse(context=request.context, suggestions=[])
 
+    @app.post("/skills/use", response_model=UseResponse)
+    async def use_skill(request: UseRequest):
+        """Find and use the best matching skill for a natural language query.
+
+        This is the primary endpoint for skill invocation. Describe what you
+        need in natural language, and the system will find and return the
+        most relevant skill.
+        """
+        from ..core.router import get_router
+
+        router = get_router()
+        result = router.use(
+            context=request.context,
+            variables=request.variables,
+        )
+
+        return UseResponse(
+            skill_name=result.skill_name,
+            content=result.content,
+            score=result.score,
+            matched_query=result.matched_query,
+        )
+
     # ─────────────────────────────────────────────────────────────────
     # OpenAI Compatible Endpoints
     # ─────────────────────────────────────────────────────────────────
@@ -305,6 +330,25 @@ def create_app():
         OpenAI function calling.
         """
         tools = [
+            OpenAITool(
+                function=OpenAIFunction(
+                    name="use_skill",
+                    description="Find and use the best AI skill for your current task. Describe what you need in natural language.",
+                    parameters=OpenAIFunctionParameters(
+                        properties={
+                            "context": OpenAIFunctionParameter(
+                                type="string",
+                                description="Natural language description of what you need (e.g., 'debug python memory leak')",
+                            ),
+                            "variables": OpenAIFunctionParameter(
+                                type="object",
+                                description="Optional variables to customize the skill",
+                            ),
+                        },
+                        required=["context"],
+                    ),
+                ),
+            ),
             OpenAITool(
                 function=OpenAIFunction(
                     name="skill_search",
@@ -399,7 +443,12 @@ def create_app():
         args = request.arguments
 
         try:
-            if name == "skill_search":
+            if name == "use_skill":
+                use_req = UseRequest(**args)
+                result = await use_skill(use_req)
+                content = result.model_dump_json()
+
+            elif name == "skill_search":
                 search_req = SearchRequest(**args)
                 result = await search_skills(search_req)
                 content = result.model_dump_json()

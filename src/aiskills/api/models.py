@@ -38,6 +38,20 @@ class SuggestRequest(BaseModel):
     limit: int = Field(default=3, ge=1, le=10, description="Maximum suggestions")
 
 
+class UseRequest(BaseModel):
+    """Request for using a skill via natural language."""
+
+    context: str = Field(
+        description=(
+            "Natural language description of what you need. "
+            "Example: 'debug python memory leak', 'write unit tests'"
+        )
+    )
+    variables: dict[str, Any] | None = Field(
+        default=None, description="Optional variables to customize the skill"
+    )
+
+
 # ─────────────────────────────────────────────────────────────────
 # Response Models
 # ─────────────────────────────────────────────────────────────────
@@ -92,6 +106,15 @@ class SuggestResponse(BaseModel):
 
     context: str
     suggestions: list[SearchResult]
+
+
+class UseResponse(BaseModel):
+    """Response for using a skill."""
+
+    skill_name: str
+    content: str
+    score: float | None = None
+    matched_query: str
 
 
 class ErrorResponse(BaseModel):

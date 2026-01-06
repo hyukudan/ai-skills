@@ -1,280 +1,84 @@
 # Google Gemini Integration
 
-This guide explains how to use aiskills with Google Gemini models.
+**Ai Skills** can power Google Gemini models by providing a dynamic toolset for knowledge retrieval. While there is no direct "plugin" system like MCP for Gemini yet, you can easily integrate Ai Skills using Gemini's **Function Calling** capabilities via the Python SDK.
 
-## Option 1: REST API
+## Overview
 
-Use the aiskills REST API with Gemini's function calling.
+The integration works by:
+1.  Defining Ai Skills tools (search, read) as Gemini Function Declarations.
+2.  Allowing the Gemini model to "call" these tools when it needs information.
+3.  Executing the tool locally using the `aiskills` SDK.
+4.  Feeding the result back to Gemini.
 
-### Setup
+## Setup
 
-1. **Start the API server:**
+First, ensure you have the necessary packages:
+
 ```bash
-aiskills api serve
+pip install aiskills google-generativeai
 ```
 
-2. **Get tool definitions:**
-```bash
-curl http://localhost:8420/openai/tools
-```
+## Python SDK Example
 
-### Function Calling with Gemini
+Here is a complete example of how to build a Gemini-powered agent with access to your skills.
 
 ```python
+import os
 import google.generativeai as genai
-import requests
-import json
+from google.generativeai.types import FunctionDeclaration, Tool
+from aiskills import SkillManager
 
-# Configure Gemini
-genai.configure(api_key="YOUR_API_KEY")
+# 1. Initialize Ai Skills
+skill_manager = SkillManager()
 
-# Define tools in Gemini format
+# 2. Define Tools Wrapper
+def search_skills(query: str):
+    """Search for relevant skills based on a query."""
+    results = skill_manager.search(query, limit=3)
+    return "\n".join([f"Skill: {r.skill.name}\nDescription: {r.skill.description}" for r in results])
+
+def read_skill(name: str):
+    """Read the full content of a specific skill."""
+    try:
+        skill = skill_manager.read_skill(name)
+        return skill.content
+    except Exception as e:
+        return f"Error reading skill: {str(e)}"
+
+# 3. Create Function Declarations
 tools = [
-    {
-        "function_declarations": [
-            {
-                "name": "skill_search",
-                "description": "Search for AI skills by query",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "Search query"
-                        },
-                        "limit": {
-                            "type": "integer",
-                            "description": "Max results"
-                        }
-                    },
-                    "required": ["query"]
-                }
-            },
-            {
-                "name": "skill_read",
-                "description": "Read a skill by name",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "name": {
-                            "type": "string",
-                            "description": "Skill name"
-                        }
-                    },
-                    "required": ["name"]
-                }
-            }
-        ]
-    }
+    search_skills,
+    read_skill
 ]
 
-# Create model with tools
+# 4. Initialize Gemini with Tools
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-pro",
+    model_name='gemini-1.5-pro',
     tools=tools
 )
 
-chat = model.start_chat()
-response = chat.send_message("How do I debug Python applications?")
+# 5. Start Chat
+chat = model.start_chat(enable_automatic_function_calling=True)
 
-# Handle function calls
-for part in response.parts:
-    if hasattr(part, "function_call"):
-        func_name = part.function_call.name
-        func_args = dict(part.function_call.args)
-
-        # Call aiskills API
-        result = requests.post(
-            "http://localhost:8420/openai/call",
-            json={"name": func_name, "arguments": func_args}
-        )
-
-        # Send result back to Gemini
-        response = chat.send_message(
-            genai.protos.Content(
-                parts=[genai.protos.Part(
-                    function_response=genai.protos.FunctionResponse(
-                        name=func_name,
-                        response={"result": result.json()}
-                    )
-                )]
-            )
-        )
+# 6. Interacting
+response = chat.send_message("I need to debug a memory leak in my Python app. Do we have any guides?")
+print(response.text)
 ```
 
-## Option 2: AI Studio Integration
+## How it Works
 
-Use aiskills with Google AI Studio.
+1.  **`search_skills`**: When you ask about "debugging", Gemini decides to call this function.
+2.  **`aiskills` Execution**: The function searches your local markdown files.
+3.  **Context Injection**: The search results (names and descriptions) are returned to Gemini.
+4.  **`read_skill`**: If Gemini thinks a specific skill looks useful, it calls this function to get the full markdown content.
+5.  **Final Answer**: Gemini uses the skill content to answer your question precisely.
 
-### Export Skills as Context
+## HTTP API Usage
 
-```python
-import requests
+If you are not using Python, you can run `aiskills api serve` and use the HTTP endpoints to fetch tool definitions compatible with the [OpenAI format](https://platform.openai.com/docs/guides/function-calling), which many Gemini wrappers libraries also support or can be adapted to.
 
-# Get all skills
-skills = requests.get("http://localhost:8420/skills").json()
-
-# Create context string
-context = "You have access to these skills:\n\n"
-for skill in skills["skills"]:
-    context += f"- {skill['name']}: {skill['description']}\n"
-
-# Use in AI Studio prompt
-system_prompt = f"""
-{context}
-
-When asked about coding topics, reference these skills and their guidance.
-"""
-```
-
-### Manual Integration
-
-1. Export skill content:
 ```bash
-aiskills read python-debugging > skill_context.txt
-```
-
-2. Include in your AI Studio prompt as context
-
-## Option 3: Vertex AI
-
-For enterprise use with Vertex AI:
-
-```python
-from vertexai.generative_models import GenerativeModel, Tool, FunctionDeclaration
-import requests
-
-# Define tools
-skill_search = FunctionDeclaration(
-    name="skill_search",
-    description="Search for AI skills",
-    parameters={
-        "type": "object",
-        "properties": {
-            "query": {"type": "string", "description": "Search query"},
-        },
-        "required": ["query"]
-    }
-)
-
-skill_read = FunctionDeclaration(
-    name="skill_read",
-    description="Read a skill",
-    parameters={
-        "type": "object",
-        "properties": {
-            "name": {"type": "string", "description": "Skill name"},
-        },
-        "required": ["name"]
-    }
-)
-
-tools = Tool(function_declarations=[skill_search, skill_read])
-
-# Create model
-model = GenerativeModel("gemini-1.5-pro", tools=[tools])
-
-# Use in conversation
-response = model.generate_content(
-    "Help me with Python debugging",
-    tools=[tools]
-)
-
-# Handle function calls
-for candidate in response.candidates:
-    for part in candidate.content.parts:
-        if part.function_call:
-            name = part.function_call.name
-            args = dict(part.function_call.args)
-
-            # Call aiskills
-            result = requests.post(
-                "http://localhost:8420/openai/call",
-                json={"name": name, "arguments": args}
-            ).json()
-```
-
-## Deployment for Gemini
-
-### Cloud Run
-
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-RUN pip install aiskills[api,search]
-
-# Copy your skills
-COPY .aiskills /root/.aiskills
-
-# Index skills
-RUN aiskills search-index index
-
-EXPOSE 8080
-CMD ["aiskills", "api", "serve", "--port", "8080"]
-```
-
-Deploy:
-```bash
-gcloud run deploy aiskills --source . --allow-unauthenticated
-```
-
-### App Engine
-
-```yaml
-# app.yaml
-runtime: python311
-
-entrypoint: aiskills api serve --port $PORT
-
-env_variables:
-  AISKILLS_HOME: /tmp/aiskills
-```
-
-## Best Practices
-
-1. **Pre-index skills** in your deployment
-2. **Use caching** for frequently accessed skills
-3. **Handle rate limits** gracefully
-4. **Log function calls** for debugging
-
-## Example: Complete Flow
-
-```python
-import google.generativeai as genai
-import requests
-
-AISKILLS_URL = "http://localhost:8420"
-
-def call_skill_function(name: str, args: dict) -> dict:
-    """Call an aiskills function."""
-    response = requests.post(
-        f"{AISKILLS_URL}/openai/call",
-        json={"name": name, "arguments": args}
-    )
-    return response.json()
-
-def chat_with_skills(user_message: str):
-    """Chat with Gemini using aiskills."""
-    # First, suggest relevant skills
-    suggestions = requests.post(
-        f"{AISKILLS_URL}/skills/suggest",
-        json={"context": user_message, "limit": 3}
-    ).json()
-
-    # Build context
-    context = "Relevant skills:\n"
-    for s in suggestions["suggestions"]:
-        skill = s["skill"]
-        context += f"- {skill['name']}: {skill['description']}\n"
-
-    # Chat with Gemini
-    model = genai.GenerativeModel("gemini-1.5-pro")
-    response = model.generate_content(f"{context}\n\nUser: {user_message}")
-
-    return response.text
-
-# Usage
-result = chat_with_skills("How do I debug async Python code?")
-print(result)
+aiskills api serve
+# Endpoint: http://localhost:8420/openai/tools
 ```

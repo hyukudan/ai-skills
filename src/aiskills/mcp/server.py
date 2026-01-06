@@ -16,6 +16,7 @@ from .tools import (
     SkillReadInput,
     SkillSearchInput,
     SkillSuggestInput,
+    UseSkillInput,
 )
 
 # Configure logging
@@ -43,7 +44,9 @@ def create_server() -> Server:
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         """Handle tool calls."""
         try:
-            if name == "skill_search":
+            if name == "use_skill":
+                result = await handle_use_skill(arguments)
+            elif name == "skill_search":
                 result = await handle_skill_search(arguments)
             elif name == "skill_read":
                 result = await handle_skill_read(arguments)
@@ -256,6 +259,26 @@ async def handle_skill_suggest(arguments: dict[str, Any]) -> dict[str, Any]:
                 "suggestion": "Install search extras: pip install aiskills[search]",
             }
         raise
+
+
+async def handle_use_skill(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Handle use_skill tool call - the primary skill invocation interface."""
+    from ..core.router import get_router
+
+    input_data = UseSkillInput(**arguments)
+    router = get_router()
+
+    result = router.use(
+        context=input_data.context,
+        variables=input_data.variables,
+    )
+
+    return {
+        "skill_name": result.skill_name,
+        "content": result.content,
+        "score": result.score,
+        "matched_query": result.matched_query,
+    }
 
 
 async def run_server() -> None:

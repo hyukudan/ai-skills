@@ -53,8 +53,33 @@ class SkillSuggestInput(BaseModel):
     limit: int = Field(default=3, description="Maximum suggestions", ge=1, le=10)
 
 
+class UseSkillInput(BaseModel):
+    """Input for use_skill tool - the primary skill invocation interface."""
+
+    context: str = Field(
+        description=(
+            "Natural language description of what you need help with. "
+            "Examples: 'debug python memory leak', 'write unit tests', 'optimize SQL query'"
+        )
+    )
+    variables: dict[str, Any] | None = Field(
+        default=None,
+        description="Optional variables to customize the skill output",
+    )
+
+
 # Tool schemas for MCP
 TOOL_DEFINITIONS = [
+    {
+        "name": "use_skill",
+        "description": (
+            "Find and use the best matching AI skill for your current task. "
+            "Describe what you need in natural language and this tool will find "
+            "the most relevant skill and return its content. This is the primary "
+            "way to leverage AI skills - just describe your problem."
+        ),
+        "inputSchema": UseSkillInput.model_json_schema(),
+    },
     {
         "name": "skill_search",
         "description": (
@@ -91,3 +116,4 @@ TOOL_DEFINITIONS = [
         "inputSchema": SkillSuggestInput.model_json_schema(),
     },
 ]
+

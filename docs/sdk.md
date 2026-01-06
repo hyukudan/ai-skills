@@ -67,3 +67,35 @@ results = manager.search_engine.query(
     where={"tag": "sql"}
 )
 ```
+
+## 🎯 SkillRouter (Recommended)
+
+The **SkillRouter** provides the simplest way to use skills programmatically. Just describe what you need in natural language:
+
+```python
+from aiskills.core.router import get_router
+
+router = get_router()
+
+# Find and use the best matching skill
+result = router.use("debug python memory leak")
+
+print(f"Found: {result.skill_name} (score: {result.score:.0%})")
+print(result.content)  # Rendered skill content
+```
+
+### `SkillRouter` Methods
+
+-   `use(context: str, variables: dict = None) -> UseResult`
+    Find the best matching skill for a natural language query and return its rendered content.
+
+-   `use_by_name(name: str, variables: dict = None) -> UseResult`
+    Use a specific skill by exact name.
+
+### `UseResult` Properties
+
+-   `skill_name`: Name of the matched skill
+-   `content`: Rendered skill content
+-   `score`: Similarity score (0-1)
+-   `matched_query`: Original query used
+
