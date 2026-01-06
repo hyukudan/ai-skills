@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "description": "AI Skills integration for Claude Code - search, read, and use skills",
   "author": "Sergio C.",
-  "repository": "https://github.com/sergioc/aiskills",
+  "repository": "https://github.com/hyukudan/ai-skills",
+  "systemPrompt": "./SKILLS.md",
   "commands": {
     "skill": {
       "description": "Read an AI skill by name",
@@ -24,7 +25,10 @@
       {
         "name": "aiskills",
         "command": "aiskills",
-        "args": ["mcp", "serve"],
+        "args": [
+          "mcp",
+          "serve"
+        ],
         "description": "AI Skills MCP server for semantic skill search and reading"
       }
     ]

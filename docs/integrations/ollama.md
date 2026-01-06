@@ -4,27 +4,29 @@
 
 ## Strategy
 
-There are two main ways to use Ai Skills with Ollama:
+There are three main ways to use Ai Skills with Ollama:
 
 1.  **CLI Pipe (Easiest)**: Pipe skill content directly into your Ollama prompt.
-2.  **Python Wrapper**: Use a simple Python script to orchestrate the conversation.
+2.  **Python Agent**: Use a Python script to orchestrate with tool calling.
+3.  **REST API**: Connect via HTTP for any language/framework.
 
 ## Method 1: CLI Pipelining
 
-This is great for one-off queries where you know which skill you want, or want to search and pipe.
+This is great for one-off queries where you know which skill you want.
 
-**Example: Search and Ask**
+**Example: Use skill directly**
 ```bash
-# 1. Search for a skill on "linux commands" and get the top result name
-SKILL=$(aiskills search "linux networking" --limit 1 --name-only)
+# Find and use the best skill for your task
+aiskills use "debug python memory leak" | ollama run llama3 "Apply this to my code"
 
-# 2. Read the skill and pipe it to ollama
-aiskills read $SKILL | ollama run llama3 "How do I check open ports based on this guide?"
+# Or search and read specific skills
+SKILL=$(aiskills search "linux networking" --limit 1 --name-only)
+aiskills read $SKILL | ollama run llama3 "How do I check open ports?"
 ```
 
 ## Method 2: Python Agent (Recommended)
 
-For a more interactive experience, you can create a small script that gives Ollama "tools".
+For a more interactive experience, use the Ollama Python SDK with AI Skills tools.
 
 ### Prerequisites
 ```bash
@@ -35,53 +37,62 @@ pip install aiskills ollama
 
 ```python
 import ollama
-from aiskills import SkillManager
+from aiskills.core.router import get_router
 
-manager = SkillManager()
+router = get_router()
 
-# Define tools for Ollama (if model supports tool calling like Llama 3.1)
+# System prompt that enables proactive skill usage
+SYSTEM_PROMPT = """You have access to AI Skills - a library of expert coding knowledge.
+
+Available tools:
+- use_skill: Find the best skill for a task. Describe what you need.
+
+IMPORTANT: When users ask about coding, debugging, or best practices,
+ALWAYS call use_skill first to get expert guidance before answering.
+
+Example: If user asks "help me with Python memory leaks", 
+call use_skill with context="debug python memory leak" first."""
+
+# Define tools for Ollama
 tools = [
     {
-      'type': 'function',
-      'function': {
-        'name': 'search_skills',
-        'description': 'Search for coding skills and guides',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'query': {
-              'type': 'string',
-              'description': 'The search query',
+        'type': 'function',
+        'function': {
+            'name': 'use_skill',
+            'description': 'Find and use the best AI skill for a task. Returns expert guidance.',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'context': {
+                        'type': 'string',
+                        'description': 'Natural language description of what you need help with',
+                    },
+                },
+                'required': ['context'],
             },
-          },
-          'required': ['query'],
         },
-      },
     },
-    {
-      'type': 'function',
-      'function': {
-        'name': 'read_skill',
-        'description': 'Read the content of a specific skill',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'name': {
-              'type': 'string',
-              'description': 'The exact name of the skill',
-            },
-          },
-          'required': ['name'],
-        },
-      },
-    }
 ]
 
-# Simple loop
-messages = []
+def handle_tool_call(tool_call):
+    """Handle tool calls from the model."""
+    name = tool_call['function']['name']
+    args = tool_call['function']['arguments']
+    
+    if name == 'use_skill':
+        result = router.use(context=args['context'])
+        return f"**Skill: {result.skill_name}** (score: {result.score:.0%})\n\n{result.content}"
+    
+    return "Unknown tool"
+
+# Simple chat loop
+messages = [{'role': 'system', 'content': SYSTEM_PROMPT}]
 
 while True:
     user_input = input("You: ")
+    if user_input.lower() in ['exit', 'quit']:
+        break
+        
     messages.append({'role': 'user', 'content': user_input})
 
     response = ollama.chat(
@@ -90,37 +101,53 @@ while True:
         tools=tools,
     )
     
-    # Check for tool calls
+    # Handle tool calls
     if response['message'].get('tool_calls'):
         for tool in response['message']['tool_calls']:
-            if tool['function']['name'] == 'search_skills':
-                query = tool['function']['arguments']['query']
-                print(f"Searching for: {query}...")
-                results = manager.search(query)
-                content = "\n".join([f"- {r.skill.name}: {r.skill.description}" for r in results])
-                messages.append({'role': 'tool', 'content': content})
-            
-            elif tool['function']['name'] == 'read_skill':
-                name = tool['function']['arguments']['name']
-                print(f"Reading skill: {name}...")
-                try:
-                    skill = manager.read_skill(name)
-                    messages.append({'role': 'tool', 'content': skill.content})
-                except:
-                    messages.append({'role': 'tool', 'content': "Skill not found."})
+            print(f"🔍 Using skill for: {tool['function']['arguments'].get('context', '...')}")
+            result = handle_tool_call(tool)
+            messages.append({'role': 'tool', 'content': result})
 
         # Get final response with tool outputs
-        final_response = ollama.chat(model='llama3.1', messages=messages)
-        print("Bot:", final_response['message']['content'])
-        messages.append(final_response['message'])
+        response = ollama.chat(model='llama3.1', messages=messages)
     
-    else:
-        print("Bot:", response['message']['content'])
-        messages.append(response['message'])
+    print("Bot:", response['message']['content'])
+    messages.append(response['message'])
+```
+
+## Method 3: REST API
+
+For any language, use the REST API:
+
+```bash
+# Start the server
+aiskills api serve
+
+# Use skill via HTTP
+curl -X POST http://localhost:8420/skills/use \
+  -H "Content-Type: application/json" \
+  -d '{"context": "optimize SQL queries"}'
+```
+
+## System Prompt Template
+
+Add this to your LLM's system prompt to enable proactive skill usage:
+
+```
+You have access to AI Skills via the use_skill tool. These are expert-crafted
+guides for coding tasks.
+
+GUIDELINES:
+1. When users ask about coding, debugging, or optimization - CALL use_skill FIRST
+2. Describe the task naturally: "debug python memory leak", "write unit tests"
+3. Apply the skill's guidance to the user's specific problem
+4. Mention which skill you used for transparency
 ```
 
 ## Supported Models
 
 -   **Llama 3.1 & 3.2**: Excellent tool calling support.
--   **Mistral**: Good instruction following, can use method 1 easily.
--   **Qwen**: Also supports tool calling in newer versions.
+-   **Mistral**: Good instruction following.
+-   **Qwen 2.5**: Strong tool calling in newer versions.
+-   **DeepSeek**: Works well with function calling.
+
