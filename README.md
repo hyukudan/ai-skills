@@ -70,8 +70,8 @@ graph TD
     end
 
     subgraph "Local Storage"
-        Skills[Skill Files (.md)]
-        Vectors[Vector Store (ChromaDB)]
+        Skills["Skill Files (.md)"]
+        Vectors["Vector Store (ChromaDB)"]
     end
 
     Claude -->|MCP Protocol| MCP
