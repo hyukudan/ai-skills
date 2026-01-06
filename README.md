@@ -65,6 +65,67 @@ Ai Skills is built on three simple pillars:
 2.  **Engine**: A Python core that handles hot-reloading, template rendering, and dependency resolution.
 3.  **Interfaces**: Multiple ways to access your skills—CLI, REST API, or MCP (Model Context Protocol).
 
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+    subgraph Interfaces
+        CLI[CLI]
+        API[REST API]
+        MCP[MCP Server]
+    end
+    
+    subgraph Core
+        Router[SkillRouter]
+        Registry[Registry]
+        Manager[Manager]
+    end
+    
+    subgraph Storage
+        Skills[(Skills)]
+        Index[(Search Index)]
+    end
+    
+    CLI --> Router
+    API --> Router
+    MCP --> Router
+    
+    Router --> Registry
+    Router --> Manager
+    Registry --> Index
+    Manager --> Skills
+```
+
+### Skill Router
+
+The **Skill Router** is the intelligent core that powers natural language skill discovery. All interfaces (CLI, REST API, MCP) use the same router, ensuring consistent behavior everywhere.
+
+```python
+from aiskills.core.router import get_router
+
+router = get_router()
+result = router.use("debug python memory leak")
+
+print(result.skill_name)   # → "python-debugging"
+print(result.score)        # → 0.89 (similarity score)
+print(result.content)      # → Rendered skill content
+```
+
+**Features:**
+- 🔍 **Semantic Search** with automatic fallback to text search
+- 📝 **Template Variables** for dynamic skill content
+- 🔄 **Multiple Results** with `limit` parameter
+- ⚡ **Lazy Loading** for fast startup
+
+### Access Methods
+
+| Method | Command / Endpoint | Example |
+|--------|-------------------|---------|
+| **CLI** | `aiskills use` | `aiskills use "write unit tests"` |
+| **REST API** | `POST /skills/use` | `{"context": "optimize SQL"}` |
+| **MCP Tool** | `use_skill` | Called by Claude/agents |
+| **Python** | `router.use()` | Direct SDK usage |
+
 ## 🔌 Integrations
 
 Connect your skills to your favorite tools.
@@ -79,6 +140,7 @@ Connect your skills to your favorite tools.
 | **Custom Agents** | Python SDK | ✅ Ready | [SDK Docs](docs/sdk.md) |
 
 ## 📖 Skill Format
+
 Skills are simple markdown files with power-packed frontmatter.
 
 ```markdown
