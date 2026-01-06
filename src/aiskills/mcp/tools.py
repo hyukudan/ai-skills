@@ -1,0 +1,93 @@
+"""MCP tool definitions for aiskills."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+class SkillSearchInput(BaseModel):
+    """Input for skill_search tool."""
+
+    query: str = Field(description="Search query for finding skills")
+    limit: int = Field(default=5, description="Maximum number of results", ge=1, le=20)
+    tags: list[str] | None = Field(
+        default=None, description="Filter by tags (returns skills matching any tag)"
+    )
+    category: str | None = Field(default=None, description="Filter by category")
+    text_only: bool = Field(
+        default=False,
+        description="Use text search instead of semantic search (faster, no ML)",
+    )
+
+
+class SkillReadInput(BaseModel):
+    """Input for skill_read tool."""
+
+    name: str = Field(description="Name of the skill to read")
+    variables: dict[str, Any] | None = Field(
+        default=None, description="Variables to render in the skill template"
+    )
+    raw: bool = Field(
+        default=False,
+        description="Return raw content without rendering templates",
+    )
+
+
+class SkillListInput(BaseModel):
+    """Input for skill_list tool."""
+
+    global_only: bool = Field(
+        default=False, description="Only list globally installed skills"
+    )
+    category: str | None = Field(default=None, description="Filter by category")
+
+
+class SkillSuggestInput(BaseModel):
+    """Input for skill_suggest tool."""
+
+    context: str = Field(
+        description="Current context or task description to suggest relevant skills"
+    )
+    limit: int = Field(default=3, description="Maximum suggestions", ge=1, le=10)
+
+
+# Tool schemas for MCP
+TOOL_DEFINITIONS = [
+    {
+        "name": "skill_search",
+        "description": (
+            "Search for AI skills by semantic similarity or text matching. "
+            "Use this to find relevant skills for a given task or topic. "
+            "Semantic search understands meaning, while text search matches exact keywords."
+        ),
+        "inputSchema": SkillSearchInput.model_json_schema(),
+    },
+    {
+        "name": "skill_read",
+        "description": (
+            "Read the content of a skill by name. Returns the skill's markdown content "
+            "with optional template variables rendered. Use this after finding a skill "
+            "with skill_search to get its full content."
+        ),
+        "inputSchema": SkillReadInput.model_json_schema(),
+    },
+    {
+        "name": "skill_list",
+        "description": (
+            "List all installed skills. Returns skill names, versions, and descriptions. "
+            "Use this to see what skills are available in the system."
+        ),
+        "inputSchema": SkillListInput.model_json_schema(),
+    },
+    {
+        "name": "skill_suggest",
+        "description": (
+            "Suggest relevant skills based on the current context or task. "
+            "Provide a description of what you're working on, and this tool will "
+            "return the most relevant skills that might help."
+        ),
+        "inputSchema": SkillSuggestInput.model_json_schema(),
+    },
+]

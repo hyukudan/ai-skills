@@ -1,0 +1,32 @@
+{
+  "$schema": "https://claude.ai/claude-code/plugin-schema.json",
+  "name": "aiskills",
+  "version": "0.1.0",
+  "description": "AI Skills integration for Claude Code - search, read, and use skills",
+  "author": "Sergio C.",
+  "repository": "https://github.com/sergioc/aiskills",
+  "commands": {
+    "skill": {
+      "description": "Read an AI skill by name",
+      "entrypoint": "./commands/skill.md"
+    },
+    "skills": {
+      "description": "List available AI skills",
+      "entrypoint": "./commands/skills.md"
+    },
+    "skill-search": {
+      "description": "Search for relevant skills",
+      "entrypoint": "./commands/skill-search.md"
+    }
+  },
+  "mcp": {
+    "servers": [
+      {
+        "name": "aiskills",
+        "command": "aiskills",
+        "args": ["mcp", "serve"],
+        "description": "AI Skills MCP server for semantic skill search and reading"
+      }
+    ]
+  }
+}

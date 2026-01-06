@@ -1,0 +1,87 @@
+[project]
+name = "aiskills"
+version = "0.1.0"
+description = "Universal LLM-agnostic skills system with semantic search, versioning, and composition"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Sergio C." }]
+keywords = ["llm", "ai", "skills", "agents", "mcp", "claude"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0.0",
+    "jinja2>=3.1.0",
+    "httpx>=0.25.0",
+    "gitpython>=3.1.0",
+    "packaging>=23.0",
+]
+
+[project.optional-dependencies]
+search = [
+    "fastembed>=0.1.0",
+    "chromadb>=0.4.0",
+]
+mcp = [
+    "mcp>=1.0.0",
+]
+api = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+]
+all = [
+    "aiskills[search,mcp,api]",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+aiskills = "aiskills.cli:app"
+aiskills-mcp = "aiskills.mcp.server:main"
+aiskills-api = "aiskills.api.server:main"
+
+[project.urls]
+Homepage = "https://github.com/sergioc/aiskills"
+Repository = "https://github.com/sergioc/aiskills"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aiskills"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
