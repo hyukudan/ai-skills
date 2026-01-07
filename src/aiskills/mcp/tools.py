@@ -68,6 +68,21 @@ class UseSkillInput(BaseModel):
     )
 
 
+class SkillCategoriesInput(BaseModel):
+    """Input for skill_categories tool."""
+
+    include_skills: bool = Field(
+        default=True,
+        description="Include list of skills in each category",
+    )
+
+
+class SkillVarsInput(BaseModel):
+    """Input for skill_vars tool."""
+
+    name: str = Field(description="Name of the skill to get variables for")
+
+
 # Tool schemas for MCP
 TOOL_DEFINITIONS = [
     {
@@ -114,6 +129,24 @@ TOOL_DEFINITIONS = [
             "return the most relevant skills that might help."
         ),
         "inputSchema": SkillSuggestInput.model_json_schema(),
+    },
+    {
+        "name": "skill_categories",
+        "description": (
+            "List all skill categories with their skills. Use this to explore "
+            "available skills organized by domain (e.g., development/debugging, "
+            "devops/automation). Helps discover what skills are available."
+        ),
+        "inputSchema": SkillCategoriesInput.model_json_schema(),
+    },
+    {
+        "name": "skill_vars",
+        "description": (
+            "Get the available variables for a skill. Returns variable names, types, "
+            "allowed values, and descriptions. Use this before calling skill_read "
+            "to understand what customization options are available."
+        ),
+        "inputSchema": SkillVarsInput.model_json_schema(),
     },
 ]
 

@@ -12,10 +12,12 @@ from mcp.types import TextContent, Tool
 
 from .tools import (
     TOOL_DEFINITIONS,
+    SkillCategoriesInput,
     SkillListInput,
     SkillReadInput,
     SkillSearchInput,
     SkillSuggestInput,
+    SkillVarsInput,
     UseSkillInput,
 )
 
@@ -54,6 +56,10 @@ def create_server() -> Server:
                 result = await handle_skill_list(arguments)
             elif name == "skill_suggest":
                 result = await handle_skill_suggest(arguments)
+            elif name == "skill_categories":
+                result = await handle_skill_categories(arguments)
+            elif name == "skill_vars":
+                result = await handle_skill_vars(arguments)
             else:
                 result = {"error": f"Unknown tool: {name}"}
 
@@ -278,6 +284,117 @@ async def handle_use_skill(arguments: dict[str, Any]) -> dict[str, Any]:
         "content": result.content,
         "score": result.score,
         "matched_query": result.matched_query,
+    }
+
+
+async def handle_skill_categories(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Handle skill_categories tool call."""
+    from ..core.manager import get_manager
+    from collections import defaultdict
+
+    input_data = SkillCategoriesInput(**arguments)
+    manager = get_manager()
+
+    skills = manager.list_installed()
+
+    # Group skills by category
+    categories: dict[str, list[dict]] = defaultdict(list)
+    uncategorized: list[dict] = []
+
+    for skill in skills:
+        skill_info = {
+            "name": skill.manifest.name,
+            "description": skill.manifest.description[:100] + "..."
+            if len(skill.manifest.description) > 100
+            else skill.manifest.description,
+        }
+
+        if skill.manifest.category:
+            categories[skill.manifest.category].append(skill_info)
+        else:
+            uncategorized.append(skill_info)
+
+    # Build response
+    result = {
+        "total_categories": len(categories),
+        "total_skills": len(skills),
+        "categories": {},
+    }
+
+    # Sort categories and build output
+    for category in sorted(categories.keys()):
+        if input_data.include_skills:
+            result["categories"][category] = {
+                "count": len(categories[category]),
+                "skills": categories[category],
+            }
+        else:
+            result["categories"][category] = {
+                "count": len(categories[category]),
+            }
+
+    if uncategorized:
+        if input_data.include_skills:
+            result["uncategorized"] = {
+                "count": len(uncategorized),
+                "skills": uncategorized,
+            }
+        else:
+            result["uncategorized"] = {"count": len(uncategorized)}
+
+    return result
+
+
+async def handle_skill_vars(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Handle skill_vars tool call."""
+    from ..core.manager import get_manager
+
+    input_data = SkillVarsInput(**arguments)
+    manager = get_manager()
+
+    try:
+        skill = manager.get(input_data.name)
+    except Exception:
+        return {
+            "error": f"Skill not found: {input_data.name}",
+            "suggestion": "Use skill_list or skill_search to find available skills",
+        }
+
+    if skill is None:
+        return {
+            "error": f"Skill not found: {input_data.name}",
+            "suggestion": "Use skill_list or skill_search to find available skills",
+        }
+
+    variables = skill.manifest.variables
+
+    if not variables:
+        return {
+            "name": input_data.name,
+            "variables": {},
+            "message": "This skill has no configurable variables",
+        }
+
+    # Build detailed variable info
+    var_info = {}
+    for var_name, var_meta in variables.items():
+        var_info[var_name] = {
+            "type": var_meta.type,
+            "description": var_meta.description,
+            "default": var_meta.default,
+            "required": var_meta.required,
+        }
+        if var_meta.enum:
+            var_info[var_name]["allowed_values"] = var_meta.enum
+        if var_meta.min is not None:
+            var_info[var_name]["min"] = var_meta.min
+        if var_meta.max is not None:
+            var_info[var_name]["max"] = var_meta.max
+
+    return {
+        "name": input_data.name,
+        "variables": var_info,
+        "usage_hint": f"Use skill_read with variables parameter, e.g., skill_read(name='{input_data.name}', variables={{'var_name': 'value'}})",
     }
 
 
