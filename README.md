@@ -159,6 +159,108 @@ dependencies:
 Use `tracemalloc` to identify leaks...
 ```
 
+## 📚 Documentation
+
+### Progressive Disclosure
+
+Ai Skills implements a **3-phase progressive disclosure** system that optimizes context window usage:
+
+```
+Phase 1: BROWSE    →    Phase 2: LOAD    →    Phase 3: USE
+(metadata only)         (full content)        (extra resources)
+```
+
+- **Browse** (`aiskills browse`): Returns lightweight metadata (name, description, `tokens_est`) without loading content. Perfect for discovering relevant skills before committing tokens.
+- **Load** (`aiskills use`): Fetches the full rendered skill content.
+- **Use** (on-demand): Load additional resources (templates, references, scripts) only when needed.
+
+📖 [Full Guide](docs/progressive-disclosure.md)
+
+### Declarative Scoping
+
+Go beyond semantic search with **explicit matching rules** that reduce false positives:
+
+```yaml
+scope:
+  paths: ["src/api/**", "migrations/**"]    # Only match when touching these files
+  languages: [python, sql]                   # Only match for these languages
+  triggers: [migrate, alembic, revision]     # Hard keywords that boost this skill
+
+priority: 75              # 0-100, higher = more preferred
+precedence: repository    # organization > repository > project > user > local
+```
+
+The router combines semantic similarity with scope matching for accurate skill selection.
+
+📖 [Full Guide](docs/scoping.md)
+
+### Local Overrides
+
+Customize shared skills without modifying the original using `SKILL.local.md`:
+
+```
+my-skill/
+├── SKILL.md           # Shared/versioned (in git)
+└── SKILL.local.md     # Private overrides (gitignored)
+```
+
+Local overrides can:
+- **Override** scalars (priority, precedence)
+- **Extend** lists (tags, includes)
+- **Deep merge** objects (scope, security, variables)
+- **Append** content (add team-specific sections)
+
+📖 [Full Guide](docs/local-overrides.md)
+
+### Security & Sandboxing
+
+Control what resources skills can access with the `security` policy:
+
+```yaml
+security:
+  allowed_resources: [references, templates]  # What can be loaded
+  allow_execution: false                      # Can scripts run?
+  sandbox_level: standard                     # strict | standard | permissive
+  allowlist: [deploy.sh, validate.py]         # Specific allowed scripts
+```
+
+Resources are tagged with `requires_execution` and `allowed` flags for agent decision-making.
+
+📖 [Full Guide](docs/security.md)
+
+### Skill Composition
+
+Reuse content without duplication using `@include`:
+
+```markdown
+# My Guide
+
+## Python Section
+@include python-debugging
+
+## Common Patterns
+@include snippets/patterns.md
+```
+
+Features:
+- Include other skills: `@include skill:name`
+- Include snippets: `@include path/to/file.md`
+- **Depth limit** (5) prevents infinite loops
+- **Cycle detection** prevents circular includes
+
+📖 [Full Guide](docs/includes.md)
+
+### API Reference
+
+| Phase | Endpoint | Description |
+|-------|----------|-------------|
+| Browse | `POST /skills/browse` | Metadata only (lightweight discovery) |
+| Load | `POST /skills/use` | Full rendered content |
+| Resources | `GET /skills/{name}/resources` | List available extras |
+| Resource | `POST /skills/resource` | Load specific resource |
+
+All endpoints support scoping context (`active_paths`, `languages`) for accurate matching.
+
 ## 🤝 Contributing
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
