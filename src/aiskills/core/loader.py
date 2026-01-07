@@ -12,8 +12,12 @@ from ..constants import (
     SCRIPTS_DIR,
     SKILL_FILE,
 )
-from ..models.skill import Skill
+from ..models.skill import Skill, SkillManifest, SkillPrecedence
 from .parser import ParseError, YAMLParser, get_parser
+
+
+# Local override file name
+SKILL_LOCAL_FILE = "SKILL.local.md"
 
 
 class LoadError(Exception):
@@ -52,6 +56,7 @@ class SkillLoader:
         path: Path | str,
         source: Literal["project", "global", "cache"] = "project",
         location_type: Literal[".aiskills", ".claude", ".agent"] = ".aiskills",
+        apply_local_overrides: bool = True,
     ) -> Skill:
         """Load a skill from a directory path.
 
@@ -59,6 +64,7 @@ class SkillLoader:
             path: Path to skill directory (must contain SKILL.md)
             source: Where the skill came from
             location_type: Which directory structure it's in
+            apply_local_overrides: If True, merge SKILL.local.md if it exists
 
         Returns:
             Loaded Skill instance
@@ -87,7 +93,7 @@ class SkillLoader:
                 str(path),
             )
 
-        # Read and parse
+        # Read and parse base skill
         raw_content = skill_file.read_text(encoding="utf-8")
 
         try:
@@ -95,14 +101,90 @@ class SkillLoader:
         except ParseError as e:
             raise LoadError(str(e), str(skill_file)) from e
 
+        manifest = result.manifest
+        content = result.content
+
+        # Check for local overrides
+        local_file = path / SKILL_LOCAL_FILE
+        if apply_local_overrides and local_file.exists():
+            try:
+                local_content = local_file.read_text(encoding="utf-8")
+                local_result = self.parser.parse(local_content)
+
+                # Merge local overrides into manifest
+                manifest = self._merge_manifest(manifest, local_result.manifest)
+
+                # Append or replace content based on local settings
+                if local_result.content.strip():
+                    # If local has content, it extends the base
+                    content = f"{content}\n\n<!-- Local overrides from {SKILL_LOCAL_FILE} -->\n{local_result.content}"
+
+                # Update raw content to reflect merging
+                raw_content = f"{raw_content}\n\n# --- Local overrides ---\n{local_content}"
+
+            except ParseError:
+                # If local file is invalid, just skip it
+                pass
+
         return Skill(
-            manifest=result.manifest,
-            content=result.content,
-            raw_content=result.raw_content,
+            manifest=manifest,
+            content=content,
+            raw_content=raw_content,
             path=str(path.absolute()),
             source=source,
             location_type=location_type,
         )
+
+    def _merge_manifest(
+        self,
+        base: SkillManifest,
+        override: SkillManifest,
+    ) -> SkillManifest:
+        """Merge local override manifest into base manifest.
+
+        Local overrides can:
+        - Override scalar values (priority, precedence, etc.)
+        - Extend lists (tags, includes, dependencies)
+        - Override nested objects (scope, security, variables)
+
+        Args:
+            base: Base skill manifest
+            override: Local override manifest
+
+        Returns:
+            Merged manifest
+        """
+        # Start with base as dict
+        base_dict = base.model_dump()
+
+        # Get override as dict, excluding defaults
+        override_dict = override.model_dump(exclude_unset=True, exclude_defaults=True)
+
+        # Merge logic
+        for key, value in override_dict.items():
+            if key in base_dict:
+                base_value = base_dict[key]
+
+                # List fields: extend instead of replace
+                if isinstance(base_value, list) and isinstance(value, list):
+                    # Extend with unique values
+                    combined = base_value + [v for v in value if v not in base_value]
+                    base_dict[key] = combined
+
+                # Dict fields: deep merge
+                elif isinstance(base_value, dict) and isinstance(value, dict):
+                    base_dict[key] = {**base_value, **value}
+
+                # Scalar: override
+                else:
+                    base_dict[key] = value
+            else:
+                base_dict[key] = value
+
+        # Mark as local precedence since it has local overrides
+        base_dict["precedence"] = SkillPrecedence.LOCAL.value
+
+        return SkillManifest(**base_dict)
 
     def load_from_content(
         self,

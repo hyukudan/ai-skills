@@ -6,6 +6,8 @@ import json
 from typing import Any
 
 from .models import (
+    BrowseRequest,
+    BrowseResponse,
     ErrorResponse,
     ListResponse,
     OpenAIFunction,
@@ -17,10 +19,15 @@ from .models import (
     OpenAIToolsResponse,
     ReadRequest,
     ReadResponse,
+    ResourceListResponse,
+    ResourceRequest,
+    ResourceResponse,
     SearchRequest,
     SearchResponse,
     SearchResult,
+    SkillBrowseInfo,
     SkillInfo,
+    SkillResourceInfo,
     SuggestRequest,
     SuggestResponse,
     UseRequest,
@@ -297,11 +304,13 @@ def create_app():
 
     @app.post("/skills/use", response_model=UseResponse)
     async def use_skill(request: UseRequest):
-        """Find and use the best matching skill for a natural language query.
+        """Phase 2 (Load): Find and use the best matching skill.
 
         This is the primary endpoint for skill invocation. Describe what you
         need in natural language, and the system will find and return the
-        most relevant skill.
+        most relevant skill with its content.
+
+        Supports scoping context (active_paths, languages) for better matching.
         """
         from ..core.router import get_router
 
@@ -309,6 +318,8 @@ def create_app():
         result = router.use(
             context=request.context,
             variables=request.variables,
+            active_paths=request.active_paths,
+            languages=request.languages,
         )
 
         return UseResponse(
@@ -316,6 +327,131 @@ def create_app():
             content=result.content,
             score=result.score,
             matched_query=result.matched_query,
+            available_resources=result.available_resources,
+            tokens_used=result.tokens_used,
+        )
+
+    # ─────────────────────────────────────────────────────────────────
+    # Progressive Disclosure API (Browse → Load → Use)
+    # ─────────────────────────────────────────────────────────────────
+
+    @app.post("/skills/browse", response_model=BrowseResponse)
+    async def browse_skills(request: BrowseRequest):
+        """Phase 1 (Browse): Get lightweight skill metadata only.
+
+        Returns SkillBrowseInfo without loading full content.
+        Use this to discover relevant skills and decide which to load.
+
+        Supports:
+        - Semantic search (via context query)
+        - Scope filtering (via active_paths, languages)
+        - Priority-based sorting
+        """
+        from ..core.router import get_router
+
+        router = get_router()
+        results = router.browse(
+            context=request.context,
+            active_paths=request.active_paths,
+            languages=request.languages,
+            limit=request.limit,
+            min_score=request.min_score,
+        )
+
+        # Convert to API model
+        browse_infos = [
+            SkillBrowseInfo(
+                name=r.name,
+                description=r.description,
+                version=r.version,
+                tags=r.tags,
+                category=r.category,
+                tokens_est=r.tokens_est,
+                priority=r.priority,
+                precedence=r.precedence,
+                scope_paths=r.scope_paths,
+                scope_languages=r.scope_languages,
+                scope_triggers=r.scope_triggers,
+                source=r.source,
+                has_variables=r.has_variables,
+                has_dependencies=r.has_dependencies,
+            )
+            for r in results
+        ]
+
+        return BrowseResponse(
+            skills=browse_infos,
+            total=len(browse_infos),
+            query=request.context,
+        )
+
+    @app.get("/skills/{name}/resources", response_model=ResourceListResponse)
+    async def list_skill_resources(name: str):
+        """Phase 3 (Use) preparation: List available resources for a skill.
+
+        Returns information about templates, references, scripts, and assets
+        that can be loaded on-demand.
+        """
+        from ..core.router import get_router
+
+        router = get_router()
+        resources = router.list_resources(name)
+
+        resource_infos = [
+            SkillResourceInfo(
+                resource_type=r.resource_type,
+                path=r.path,
+                name=r.name,
+                size_bytes=r.size_bytes,
+                tokens_est=r.tokens_est,
+                requires_execution=r.requires_execution,
+                allowed=r.allowed,
+            )
+            for r in resources
+        ]
+
+        return ResourceListResponse(
+            skill_name=name,
+            resources=resource_infos,
+            total=len(resource_infos),
+        )
+
+    @app.post("/skills/resource", response_model=ResourceResponse)
+    async def get_skill_resource(request: ResourceRequest):
+        """Phase 3 (Use): Load a specific resource from a skill.
+
+        Loads additional resources (templates, references, scripts, assets)
+        on-demand after using the main skill content.
+        """
+        from ..core.router import get_router
+
+        router = get_router()
+
+        # Get resource content
+        content = router.resource(request.skill_name, request.resource_name)
+
+        if content is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Resource '{request.resource_name}' not found in skill '{request.skill_name}'",
+            )
+
+        # Determine resource type
+        resources = router.list_resources(request.skill_name)
+        resource_type = "unknown"
+        tokens_est = None
+        for r in resources:
+            if r.name == request.resource_name:
+                resource_type = r.resource_type
+                tokens_est = r.tokens_est
+                break
+
+        return ResourceResponse(
+            skill_name=request.skill_name,
+            resource_name=request.resource_name,
+            content=content,
+            resource_type=resource_type,
+            tokens_est=tokens_est,
         )
 
     # ─────────────────────────────────────────────────────────────────
