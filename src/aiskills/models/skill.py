@@ -90,6 +90,13 @@ class SkillManifest(BaseModel):
     context: str | None = None  # Additional context for semantic search
     triggers: list[SkillTrigger] = Field(default_factory=list)
 
+    # Simple trigger phrases for easier semantic matching
+    # These are phrases that should strongly match this skill
+    trigger_phrases: list[str] = Field(
+        default_factory=list,
+        description="Phrases that should strongly match this skill (e.g., 'memory leak', 'debug python')",
+    )
+
     # Requirements
     requirements: SkillRequirements | None = None
 

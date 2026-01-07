@@ -55,6 +55,7 @@ from .commands import search as search_cmd
 from .commands import sync as sync_cmd
 from .commands import use as use_cmd
 from .commands import validate as validate_cmd
+from .commands import vars as vars_cmd
 
 app.command(name="init")(init_cmd.init)
 app.command(name="install")(install_cmd.install)
@@ -65,6 +66,7 @@ app.command(name="use")(use_cmd.main)
 app.command(name="validate")(validate_cmd.validate)
 app.command(name="search")(search_cmd.main)
 app.command(name="sync")(sync_cmd.sync)
+app.command(name="vars")(vars_cmd.vars)
 
 # Search subcommands (index, stats)
 app.add_typer(search_cmd.app, name="search-index", help="Manage search index")

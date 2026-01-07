@@ -7,6 +7,17 @@ description: |
 version: 1.0.0
 tags: [python, debugging, troubleshooting, errors]
 category: development/debugging
+trigger_phrases:
+  - "debug python"
+  - "python error"
+  - "traceback"
+  - "memory leak python"
+  - "python exception"
+  - "AttributeError"
+  - "TypeError python"
+  - "pdb debugger"
+  - "python crash"
+  - "fix python bug"
 variables:
   framework:
     type: string
