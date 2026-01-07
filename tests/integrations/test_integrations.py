@@ -1157,3 +1157,174 @@ class TestAsyncSupport:
             for name, client in clients:
                 for method in required_async_methods:
                     assert hasattr(client, method), f"{name} missing {method}"
+
+
+# =============================================================================
+# Token Counting and Cost Estimation Tests
+# =============================================================================
+
+
+class TestTokenCounting:
+    """Tests for token counting functionality."""
+
+    def test_count_tokens_estimate_empty(self):
+        """Empty string should return 0 tokens."""
+        from aiskills.integrations import count_tokens_estimate
+
+        assert count_tokens_estimate("") == 0
+        assert count_tokens_estimate("", "gpt-4") == 0
+
+    def test_count_tokens_estimate_simple(self):
+        """Should estimate tokens for simple text."""
+        from aiskills.integrations import count_tokens_estimate
+
+        # "Hello world" is about 2-3 tokens in most tokenizers
+        # Our estimate uses ~4 chars per token
+        result = count_tokens_estimate("Hello world", "llama3.1")
+        assert result > 0
+        assert result < 10  # Should be reasonable
+
+    def test_count_tokens_estimate_longer_text(self):
+        """Should estimate tokens for longer text."""
+        from aiskills.integrations import count_tokens_estimate
+
+        long_text = "This is a longer piece of text that should have more tokens " * 10
+        result = count_tokens_estimate(long_text, "claude-sonnet-4-20250514")
+        # ~4 chars per token, text is ~600 chars, so ~150 tokens
+        assert 100 < result < 300
+
+
+class TestCostEstimation:
+    """Tests for cost estimation functionality."""
+
+    def test_estimate_cost_gpt4(self):
+        """Should estimate cost for GPT-4."""
+        from aiskills.integrations import estimate_cost
+
+        # GPT-4: $0.03/1K input, $0.06/1K output
+        cost = estimate_cost(1000, 1000, "gpt-4")
+        assert cost == 0.09  # $0.03 + $0.06
+
+    def test_estimate_cost_ollama_free(self):
+        """Ollama models should be free."""
+        from aiskills.integrations import estimate_cost
+
+        cost = estimate_cost(10000, 10000, "llama3.1")
+        assert cost == 0.0
+
+    def test_estimate_cost_unknown_model(self):
+        """Unknown model should use default pricing."""
+        from aiskills.integrations import estimate_cost
+
+        cost = estimate_cost(1000, 1000, "unknown-model")
+        assert cost > 0  # Should use default rates
+
+
+class TestUsageStats:
+    """Tests for UsageStats dataclass."""
+
+    def test_usage_stats_add(self):
+        """Should accumulate usage correctly."""
+        from aiskills.integrations import UsageStats
+
+        stats = UsageStats()
+        stats.add(100, 200, "gpt-4")
+        stats.add(150, 300, "gpt-4")
+
+        assert stats.input_tokens == 250
+        assert stats.output_tokens == 500
+        assert stats.total_tokens == 750
+        assert stats.requests == 2
+
+    def test_usage_stats_to_dict(self):
+        """Should convert to dictionary."""
+        from aiskills.integrations import UsageStats
+
+        stats = UsageStats()
+        stats.add(100, 200, "gpt-4")
+
+        result = stats.to_dict()
+        assert "input_tokens" in result
+        assert "output_tokens" in result
+        assert "total_tokens" in result
+        assert "estimated_cost" in result
+
+
+class TestUsageTracker:
+    """Tests for UsageTracker class."""
+
+    def test_tracker_add_usage(self):
+        """Should track usage over multiple requests."""
+        from aiskills.integrations import UsageTracker
+
+        tracker = UsageTracker()
+        tracker.add_usage(100, 200, "gpt-4")
+        tracker.add_usage(150, 300, "gpt-4")
+
+        assert tracker.total_tokens == 750
+        assert tracker.total_cost > 0
+
+    def test_tracker_history(self):
+        """Should maintain request history."""
+        from aiskills.integrations import UsageTracker
+
+        tracker = UsageTracker()
+        tracker.add_usage(100, 200, "gpt-4")
+        tracker.add_usage(150, 300, "claude-sonnet-4-20250514")
+
+        history = tracker.history
+        assert len(history) == 2
+        assert history[0]["model"] == "gpt-4"
+        assert history[1]["model"] == "claude-sonnet-4-20250514"
+
+    def test_tracker_reset(self):
+        """Should reset all tracking."""
+        from aiskills.integrations import UsageTracker
+
+        tracker = UsageTracker()
+        tracker.add_usage(100, 200, "gpt-4")
+        tracker.reset()
+
+        assert tracker.total_tokens == 0
+        assert tracker.total_cost == 0
+        assert len(tracker.history) == 0
+
+    def test_tracker_stats_property(self):
+        """Should expose stats object."""
+        from aiskills.integrations import UsageTracker, UsageStats
+
+        tracker = UsageTracker()
+        assert isinstance(tracker.stats, UsageStats)
+
+
+class TestModelPricing:
+    """Tests for model pricing dictionary."""
+
+    def test_model_pricing_has_major_providers(self):
+        """Should have pricing for major models."""
+        from aiskills.integrations import MODEL_PRICING
+
+        # OpenAI
+        assert "gpt-4" in MODEL_PRICING
+        assert "gpt-4o" in MODEL_PRICING
+        assert "gpt-3.5-turbo" in MODEL_PRICING
+
+        # Anthropic
+        assert "claude-sonnet-4-20250514" in MODEL_PRICING
+        assert "claude-3-opus-20240229" in MODEL_PRICING
+
+        # Gemini
+        assert "gemini-1.5-pro" in MODEL_PRICING
+
+        # Ollama
+        assert "llama3.1" in MODEL_PRICING
+
+    def test_model_pricing_structure(self):
+        """Each model should have input and output pricing."""
+        from aiskills.integrations import MODEL_PRICING
+
+        for model, pricing in MODEL_PRICING.items():
+            assert "input" in pricing, f"{model} missing input price"
+            assert "output" in pricing, f"{model} missing output price"
+            assert isinstance(pricing["input"], (int, float))
+            assert isinstance(pricing["output"], (int, float))

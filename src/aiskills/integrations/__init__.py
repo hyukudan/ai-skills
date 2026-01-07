@@ -49,6 +49,12 @@ from .base import (
     retry_with_backoff,
     validate_tool_arguments,
     get_tool_schema,
+    # Token counting and cost estimation
+    MODEL_PRICING,
+    count_tokens_estimate,
+    estimate_cost,
+    UsageStats,
+    UsageTracker,
 )
 
 # Lazy imports for optional dependencies
@@ -127,6 +133,12 @@ __all__ = [
     "retry_with_backoff",
     "validate_tool_arguments",
     "get_tool_schema",
+    # Token counting and cost estimation
+    "MODEL_PRICING",
+    "count_tokens_estimate",
+    "estimate_cost",
+    "UsageStats",
+    "UsageTracker",
     # Client factories
     "create_openai_client",
     "create_anthropic_client",

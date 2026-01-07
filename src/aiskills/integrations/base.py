@@ -281,6 +281,204 @@ def validate_tool_arguments(
     return validated
 
 
+# =============================================================================
+# Token Counting and Cost Estimation
+# =============================================================================
+
+
+# Pricing per 1K tokens (input/output) - Updated January 2025
+MODEL_PRICING: dict[str, dict[str, float]] = {
+    # OpenAI
+    "gpt-4": {"input": 0.03, "output": 0.06},
+    "gpt-4-turbo": {"input": 0.01, "output": 0.03},
+    "gpt-4-turbo-preview": {"input": 0.01, "output": 0.03},
+    "gpt-4o": {"input": 0.005, "output": 0.015},
+    "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
+    "gpt-3.5-turbo": {"input": 0.0005, "output": 0.0015},
+    "o1": {"input": 0.015, "output": 0.06},
+    "o1-mini": {"input": 0.003, "output": 0.012},
+    # Anthropic
+    "claude-3-opus-20240229": {"input": 0.015, "output": 0.075},
+    "claude-sonnet-4-20250514": {"input": 0.003, "output": 0.015},
+    "claude-3-5-sonnet-20241022": {"input": 0.003, "output": 0.015},
+    "claude-3-haiku-20240307": {"input": 0.00025, "output": 0.00125},
+    # Gemini (free tier available, these are paid tier)
+    "gemini-1.5-pro": {"input": 0.00025, "output": 0.0005},
+    "gemini-1.5-flash": {"input": 0.000075, "output": 0.0003},
+    "gemini-2.0-flash": {"input": 0.0001, "output": 0.0004},
+    # Ollama (free - local)
+    "llama3.1": {"input": 0.0, "output": 0.0},
+    "llama3.2": {"input": 0.0, "output": 0.0},
+    "mistral": {"input": 0.0, "output": 0.0},
+    "mixtral": {"input": 0.0, "output": 0.0},
+    "codellama": {"input": 0.0, "output": 0.0},
+}
+
+
+def count_tokens_estimate(text: str, model: str = "gpt-4") -> int:
+    """Estimate token count for text.
+
+    Uses tiktoken for OpenAI models when available, otherwise uses a
+    character-based estimate (roughly 4 chars per token).
+
+    Args:
+        text: Text to count tokens for
+        model: Model name (affects tokenization)
+
+    Returns:
+        Estimated token count
+    """
+    if not text:
+        return 0
+
+    # Try tiktoken for OpenAI models
+    if "gpt" in model.lower() or model.startswith("o1"):
+        try:
+            import tiktoken
+
+            try:
+                encoding = tiktoken.encoding_for_model(model)
+            except KeyError:
+                # Fall back to cl100k_base for newer models
+                encoding = tiktoken.get_encoding("cl100k_base")
+
+            return len(encoding.encode(text))
+        except ImportError:
+            pass  # Fall through to estimate
+
+    # Claude uses a similar tokenization to GPT-4
+    # Gemini and others: use character-based estimate
+    # Average: ~4 characters per token for English text
+    return max(1, len(text) // 4)
+
+
+def estimate_cost(
+    input_tokens: int,
+    output_tokens: int,
+    model: str,
+) -> float:
+    """Estimate cost for a request.
+
+    Args:
+        input_tokens: Number of input tokens
+        output_tokens: Number of output tokens
+        model: Model name
+
+    Returns:
+        Estimated cost in USD
+    """
+    pricing = MODEL_PRICING.get(model, {"input": 0.01, "output": 0.03})
+
+    input_cost = (input_tokens / 1000) * pricing["input"]
+    output_cost = (output_tokens / 1000) * pricing["output"]
+
+    return round(input_cost + output_cost, 6)
+
+
+@dataclass
+class UsageStats:
+    """Token usage and cost statistics for a session or request."""
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+    estimated_cost: float = 0.0
+    requests: int = 0
+    model: str = ""
+
+    def add(self, input_tokens: int, output_tokens: int, model: str = "") -> None:
+        """Add usage from a request.
+
+        Args:
+            input_tokens: Input tokens used
+            output_tokens: Output tokens used
+            model: Model used (for cost calculation)
+        """
+        self.input_tokens += input_tokens
+        self.output_tokens += output_tokens
+        self.total_tokens = self.input_tokens + self.output_tokens
+        self.requests += 1
+        self.model = model or self.model
+
+        if self.model:
+            self.estimated_cost = estimate_cost(
+                self.input_tokens,
+                self.output_tokens,
+                self.model,
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "input_tokens": self.input_tokens,
+            "output_tokens": self.output_tokens,
+            "total_tokens": self.total_tokens,
+            "estimated_cost": self.estimated_cost,
+            "requests": self.requests,
+            "model": self.model,
+        }
+
+
+class UsageTracker:
+    """Track token usage and costs across multiple requests.
+
+    Example:
+        >>> tracker = UsageTracker()
+        >>> tracker.add_usage(150, 300, "gpt-4")
+        >>> print(f"Total cost: ${tracker.total_cost:.4f}")
+    """
+
+    def __init__(self):
+        self._stats = UsageStats()
+        self._history: list[dict[str, Any]] = []
+
+    def add_usage(
+        self,
+        input_tokens: int,
+        output_tokens: int,
+        model: str = "",
+    ) -> None:
+        """Record usage from a request.
+
+        Args:
+            input_tokens: Input tokens used
+            output_tokens: Output tokens used
+            model: Model used
+        """
+        self._stats.add(input_tokens, output_tokens, model)
+        self._history.append({
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "model": model,
+            "cost": estimate_cost(input_tokens, output_tokens, model) if model else 0,
+        })
+
+    @property
+    def total_tokens(self) -> int:
+        """Total tokens used."""
+        return self._stats.total_tokens
+
+    @property
+    def total_cost(self) -> float:
+        """Total estimated cost in USD."""
+        return self._stats.estimated_cost
+
+    @property
+    def stats(self) -> UsageStats:
+        """Get current usage statistics."""
+        return self._stats
+
+    @property
+    def history(self) -> list[dict[str, Any]]:
+        """Get request history."""
+        return self._history.copy()
+
+    def reset(self) -> None:
+        """Reset all tracking."""
+        self._stats = UsageStats()
+        self._history.clear()
+
+
 @dataclass
 class ToolDefinition:
     """Universal tool definition that can be converted to any provider format."""
