@@ -19,6 +19,9 @@ def search(
     text: bool = typer.Option(
         False, "--text", "-t", help="Use text search instead of semantic"
     ),
+    hybrid: bool = typer.Option(
+        False, "--hybrid", "-H", help="Use hybrid search (semantic + BM25)"
+    ),
     tags: list[str] = typer.Option(
         None, "--tag", "-T", help="Filter by tags (can specify multiple)"
     ),
@@ -35,11 +38,13 @@ def search(
 
     By default uses semantic search (requires search extras).
     Use --text for simple text matching.
+    Use --hybrid for best accuracy (combines semantic + keyword matching).
 
     Examples:
         aiskills search "debug python"
         aiskills search "api testing" --tag testing
         aiskills search debug --text
+        aiskills search "memory leak" --hybrid
         aiskills search "performance" --sync
     """
     registry = get_registry()
@@ -89,6 +94,67 @@ def search(
             )
 
         console.print(table)
+
+    elif hybrid:
+        # Hybrid search (semantic + BM25)
+        try:
+            results = registry.search_hybrid(
+                query=query,
+                limit=limit,
+                tags=tags,
+                category=category,
+                min_score=min_score,
+            )
+        except Exception as e:
+            error_msg = str(e)
+            if "not installed" in error_msg.lower():
+                console.print(
+                    "[red]Error:[/red] Hybrid search requires search extras."
+                )
+                console.print("Install with: [cyan]pip install aiskills[search][/cyan]")
+                console.print(
+                    "\nAlternatively, use [cyan]--text[/cyan] for simple text search."
+                )
+            else:
+                console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(1)
+
+        if not results:
+            console.print(f"[yellow]No skills found matching '{query}'[/yellow]")
+            if registry.count() == 0:
+                console.print(
+                    "[dim]Registry is empty. Run with --sync to index installed skills.[/dim]"
+                )
+            return
+
+        table = Table(title=f"Hybrid Search: '{query}'")
+        table.add_column("Score", style="yellow", width=6)
+        table.add_column("Name", style="cyan")
+        table.add_column("Version", style="dim")
+        table.add_column("Description")
+        table.add_column("Tags", style="green")
+
+        for skill_idx, score in results:
+            tags_str = ", ".join(skill_idx.tags[:3])
+            if len(skill_idx.tags) > 3:
+                tags_str += f" (+{len(skill_idx.tags) - 3})"
+
+            desc = skill_idx.description
+            if len(desc) > 50:
+                desc = desc[:47] + "..."
+
+            score_str = f"{score:.0%}"
+
+            table.add_row(
+                score_str,
+                skill_idx.name,
+                skill_idx.version,
+                desc,
+                tags_str,
+            )
+
+        console.print(table)
+        console.print(f"\n[dim]Found {len(results)} results (semantic + BM25)[/dim]")
 
     else:
         # Semantic search
@@ -233,6 +299,9 @@ def main(
     text: bool = typer.Option(
         False, "--text", "-t", help="Use text search instead of semantic"
     ),
+    hybrid: bool = typer.Option(
+        False, "--hybrid", "-H", help="Use hybrid search (semantic + BM25)"
+    ),
     tags: list[str] = typer.Option(
         None, "--tag", "-T", help="Filter by tags (can specify multiple)"
     ),
@@ -249,6 +318,7 @@ def main(
     search(
         query=query,
         text=text,
+        hybrid=hybrid,
         tags=tags,
         category=category,
         limit=limit,
