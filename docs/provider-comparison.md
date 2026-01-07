@@ -12,11 +12,10 @@ This guide compares the four LLM providers supported by AI Skills: OpenAI, Anthr
 | **Max Tool Rounds** | Configurable | Configurable | N/A** | Configurable |
 | **Local/Private** | No | No | No | Yes |
 | **API Key Required** | Yes | Yes | Yes | No |
-| **Async Support*** | Planned | Planned | Planned | Planned |
+| **Async Support** | Yes | Yes | Yes | Yes |
 
 *Ollama tool calling depends on model (llama3.1, mistral-nemo, mixtral support it)
 **Gemini handles tool loops internally via SDK
-***Async support coming in future release
 
 ---
 
@@ -209,6 +208,38 @@ except ProviderError as e:
 except ToolValidationError as e:
     print(f"Invalid args for {e.tool_name}: {e.invalid_args}")
 ```
+
+---
+
+## Async Support
+
+All providers support async/await for non-blocking operations:
+
+```python
+import asyncio
+from aiskills.integrations import create_openai_client
+
+async def main():
+    client = create_openai_client()
+
+    # Async chat
+    response = await client.chat_async("Help me debug Python")
+
+    # Async with messages
+    messages = [{"role": "user", "content": "Explain testing"}]
+    response = await client.chat_with_messages_async(messages)
+
+    # Async streaming
+    async for chunk in client.chat_stream_async("Write a test"):
+        print(chunk, end="", flush=True)
+
+asyncio.run(main())
+```
+
+**Async Methods Available:**
+- `chat_async()` - Non-blocking single message
+- `chat_with_messages_async()` - Non-blocking multi-turn
+- `chat_stream_async()` - Async streaming response
 
 ---
 

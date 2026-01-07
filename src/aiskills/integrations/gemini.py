@@ -450,6 +450,112 @@ class GeminiSkills(BaseLLMIntegration):
             if chunk.text:
                 yield chunk.text
 
+    # ===== ASYNC METHODS =====
+
+    async def chat_async(
+        self,
+        message: str,
+        history: list[dict[str, str]] | None = None,
+    ) -> str:
+        """Async version of chat().
+
+        Args:
+            message: User message
+            history: Optional conversation history
+
+        Returns:
+            Model response after any function executions
+
+        Example:
+            >>> response = await client.chat_async("Help me debug Python")
+        """
+        model = self.get_model()
+
+        # Start chat with or without history
+        chat = model.start_chat(
+            enable_automatic_function_calling=self.auto_function_calling,
+            history=history or [],
+        )
+
+        response = await chat.send_message_async(message)
+        return response.text
+
+    async def chat_with_messages_async(
+        self,
+        messages: list[dict[str, Any]],
+        **kwargs: Any,
+    ) -> str:
+        """Async version of chat_with_messages().
+
+        Args:
+            messages: List of message dictionaries with 'role' and 'content' keys
+            **kwargs: Additional arguments (ignored for compatibility)
+
+        Returns:
+            Final response content
+
+        Example:
+            >>> messages = [{"role": "user", "content": "Help me with testing"}]
+            >>> response = await client.chat_with_messages_async(messages)
+        """
+        model = self.get_model()
+
+        # Convert messages to Gemini history format
+        history = []
+        for msg in messages[:-1]:  # All but last message go to history
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role in ("assistant", "system"):
+                role = "model"
+            history.append({"role": role, "parts": [content]})
+
+        # Start chat with history
+        chat = model.start_chat(
+            enable_automatic_function_calling=self.auto_function_calling,
+            history=history,
+        )
+
+        # Send the last message
+        last_message = messages[-1].get("content", "") if messages else ""
+        response = await chat.send_message_async(last_message)
+        return response.text
+
+    async def chat_stream_async(
+        self,
+        message: str,
+        history: list[dict[str, str]] | None = None,
+    ):
+        """Async streaming version of chat().
+
+        Function calls are handled automatically, then the final
+        response is streamed back.
+
+        Args:
+            message: User message
+            history: Optional conversation history
+
+        Yields:
+            String chunks of the response
+
+        Example:
+            >>> async for chunk in client.chat_stream_async("Help me debug"):
+            ...     print(chunk, end="", flush=True)
+        """
+        model = self.get_model()
+
+        # Start chat with function calling enabled
+        chat = model.start_chat(
+            enable_automatic_function_calling=self.auto_function_calling,
+            history=history or [],
+        )
+
+        # Stream the response (async)
+        response = await chat.send_message_async(message, stream=True)
+
+        async for chunk in response:
+            if chunk.text:
+                yield chunk.text
+
 
 def get_gemini_tools() -> list[Callable]:
     """Get skill tools as Python functions for Gemini.

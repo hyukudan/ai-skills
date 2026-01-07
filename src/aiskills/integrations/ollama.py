@@ -113,6 +113,23 @@ class OllamaSkills(BaseLLMIntegration):
         return self._client
 
     @property
+    def async_client(self):
+        """Lazy-load async Ollama client."""
+        if not hasattr(self, "_async_client") or self._async_client is None:
+            try:
+                import ollama
+
+                if self.host:
+                    self._async_client = ollama.AsyncClient(host=self.host)
+                else:
+                    self._async_client = ollama.AsyncClient()
+            except ImportError:
+                raise ImportError(
+                    "ollama package not installed. Install with: pip install ollama"
+                )
+        return self._async_client
+
+    @property
     def provider_name(self) -> str:
         return "ollama"
 
@@ -426,6 +443,204 @@ class OllamaSkills(BaseLLMIntegration):
             )
 
             for chunk in stream:
+                content = chunk.get("message", {}).get("content", "")
+                if content:
+                    yield content
+        else:
+            # Fallback if still has tool calls
+            yield response.get("message", {}).get("content", "")
+
+    # ===== ASYNC METHODS =====
+
+    async def chat_async(
+        self,
+        message: str,
+        system_prompt: str | None = None,
+        **options: Any,
+    ) -> str:
+        """Async version of chat().
+
+        Args:
+            message: User message
+            system_prompt: Optional system prompt
+            **options: Additional Ollama options
+
+        Returns:
+            Model response
+
+        Example:
+            >>> response = await client.chat_async("Help me debug Python")
+        """
+        messages = []
+
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        elif self.use_tools:
+            messages.append({
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant with access to AI skills. "
+                    "Use the available tools to find and apply relevant skills "
+                    "when the user asks for help with technical tasks."
+                ),
+            })
+
+        messages.append({"role": "user", "content": message})
+
+        return await self.chat_with_messages_async(messages, **options)
+
+    async def chat_with_messages_async(
+        self,
+        messages: list[dict[str, Any]],
+        **options: Any,
+    ) -> str:
+        """Async version of chat_with_messages().
+
+        Args:
+            messages: List of message dictionaries
+            **options: Additional Ollama options
+
+        Returns:
+            Final response content
+
+        Example:
+            >>> messages = [{"role": "user", "content": "Help me with testing"}]
+            >>> response = await client.chat_with_messages_async(messages)
+        """
+        tools = self.get_tools() if self.use_tools else None
+
+        response = await self.async_client.chat(
+            model=self.model,
+            messages=messages,
+            tools=tools,
+            options=options if options else None,
+        )
+
+        rounds = 0
+        while (
+            self.use_tools
+            and response.get("message", {}).get("tool_calls")
+            and rounds < self.max_tool_rounds
+        ):
+            rounds += 1
+
+            # Add assistant message with tool calls
+            messages.append(response["message"])
+
+            # Execute tools and add results (sync - tool execution is local)
+            tool_results = self._process_tool_calls(
+                response["message"]["tool_calls"]
+            )
+            messages.extend(tool_results)
+
+            # Get next response
+            response = await self.async_client.chat(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                options=options if options else None,
+            )
+
+        return response.get("message", {}).get("content", "")
+
+    async def chat_stream_async(
+        self,
+        message: str,
+        system_prompt: str | None = None,
+        **options: Any,
+    ):
+        """Async streaming version of chat().
+
+        Tool calls are executed first (non-streaming), then the final
+        response is streamed back.
+
+        Args:
+            message: User message
+            system_prompt: Optional system prompt
+            **options: Additional Ollama options
+
+        Yields:
+            String chunks of the response
+
+        Example:
+            >>> async for chunk in client.chat_stream_async("Help me debug"):
+            ...     print(chunk, end="", flush=True)
+        """
+        messages = []
+
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        elif self.use_tools:
+            messages.append({
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant with access to AI skills. "
+                    "Use the available tools to find and apply relevant skills "
+                    "when the user asks for help with technical tasks."
+                ),
+            })
+
+        messages.append({"role": "user", "content": message})
+
+        async for chunk in self.chat_stream_with_messages_async(messages, **options):
+            yield chunk
+
+    async def chat_stream_with_messages_async(
+        self,
+        messages: list[dict[str, Any]],
+        **options: Any,
+    ):
+        """Async streaming version of chat_with_messages().
+
+        Args:
+            messages: List of message dictionaries
+            **options: Additional Ollama options
+
+        Yields:
+            String chunks of the response
+        """
+        tools = self.get_tools() if self.use_tools else None
+
+        # First, handle any tool calls (non-streaming)
+        response = await self.async_client.chat(
+            model=self.model,
+            messages=messages,
+            tools=tools,
+            options=options if options else None,
+        )
+
+        rounds = 0
+        while (
+            self.use_tools
+            and response.get("message", {}).get("tool_calls")
+            and rounds < self.max_tool_rounds
+        ):
+            rounds += 1
+
+            messages.append(response["message"])
+            tool_results = self._process_tool_calls(
+                response["message"]["tool_calls"]
+            )
+            messages.extend(tool_results)
+
+            response = await self.async_client.chat(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                options=options if options else None,
+            )
+
+        # Stream the final response
+        if not response.get("message", {}).get("tool_calls"):
+            stream = await self.async_client.chat(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                options=options if options else None,
+                stream=True,
+            )
+
+            async for chunk in stream:
                 content = chunk.get("message", {}).get("content", "")
                 if content:
                     yield content

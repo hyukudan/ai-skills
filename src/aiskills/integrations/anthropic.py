@@ -23,7 +23,7 @@ from typing import Any, TYPE_CHECKING
 from .base import BaseLLMIntegration, STANDARD_TOOLS, SkillInvocationResult
 
 if TYPE_CHECKING:
-    from anthropic import Anthropic
+    from anthropic import Anthropic, AsyncAnthropic
     from anthropic.types import Message, ToolUseBlock
 
 
@@ -71,6 +71,7 @@ class AnthropicSkills(BaseLLMIntegration):
         """
         super().__init__()
         self._client = anthropic_client
+        self._async_client: "AsyncAnthropic | None" = None
         self.model = model
         self.auto_execute = auto_execute
         self.max_tool_rounds = max_tool_rounds
@@ -89,6 +90,20 @@ class AnthropicSkills(BaseLLMIntegration):
                     "Anthropic package not installed. Install with: pip install anthropic"
                 )
         return self._client
+
+    @property
+    def async_client(self) -> "AsyncAnthropic":
+        """Lazy-load async Anthropic client."""
+        if self._async_client is None:
+            try:
+                from anthropic import AsyncAnthropic
+
+                self._async_client = AsyncAnthropic()
+            except ImportError:
+                raise ImportError(
+                    "Anthropic package not installed. Install with: pip install anthropic"
+                )
+        return self._async_client
 
     @property
     def provider_name(self) -> str:
@@ -445,6 +460,227 @@ class AnthropicSkills(BaseLLMIntegration):
 
             with self.client.messages.stream(**{k: v for k, v in api_kwargs.items() if k != "stream"}) as stream:
                 for text in stream.text_stream:
+                    yield text
+        else:
+            # Fallback if still has tool calls
+            for block in response.content:
+                if hasattr(block, "text"):
+                    yield block.text
+
+    # ===== ASYNC METHODS =====
+
+    async def chat_async(
+        self,
+        message: str,
+        system_prompt: str | None = None,
+        **kwargs: Any,
+    ) -> str:
+        """Async version of chat().
+
+        Args:
+            message: User message
+            system_prompt: Optional system prompt (has a default)
+            **kwargs: Additional arguments for messages API
+
+        Returns:
+            Final assistant response after all tool executions
+
+        Example:
+            >>> response = await client.chat_async("Help me debug Python")
+        """
+        messages = [{"role": "user", "content": message}]
+
+        system = system_prompt or (
+            "You are a helpful assistant with access to AI skills. "
+            "Use the available tools to find and apply relevant skills "
+            "when the user asks for help with technical tasks."
+        )
+
+        return await self.chat_with_messages_async(messages, system=system, **kwargs)
+
+    async def chat_with_messages_async(
+        self,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        system: str | None = None,
+        **kwargs: Any,
+    ) -> str:
+        """Async version of chat_with_messages().
+
+        Args:
+            messages: List of message dictionaries
+            model: Override default model
+            system: System prompt
+            **kwargs: Additional arguments for messages API
+
+        Returns:
+            Final assistant response content
+
+        Example:
+            >>> messages = [{"role": "user", "content": "Help me with testing"}]
+            >>> response = await client.chat_with_messages_async(messages)
+        """
+        model = model or self.model
+        tools = self.get_tools() if self.auto_execute else None
+
+        api_kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": kwargs.pop("max_tokens", self.max_tokens),
+        }
+
+        if system:
+            api_kwargs["system"] = system
+
+        if tools:
+            api_kwargs["tools"] = tools
+
+        api_kwargs.update(kwargs)
+
+        response = await self.async_client.messages.create(**api_kwargs)
+
+        rounds = 0
+        while (
+            self.auto_execute
+            and response.stop_reason == "tool_use"
+            and rounds < self.max_tool_rounds
+        ):
+            rounds += 1
+
+            # Extract tool uses
+            tool_uses = self._extract_tool_uses(response)
+
+            # Add assistant message with tool use
+            messages.append({
+                "role": "assistant",
+                "content": [block.model_dump() for block in response.content],
+            })
+
+            # Execute tools and add results (sync - tool execution is local)
+            tool_results = self._process_tool_calls(tool_uses)
+            messages.append({
+                "role": "user",
+                "content": tool_results,
+            })
+
+            # Update kwargs for next call
+            api_kwargs["messages"] = messages
+
+            # Get next response
+            response = await self.async_client.messages.create(**api_kwargs)
+
+        # Extract text from final response
+        text_parts = []
+        for block in response.content:
+            if hasattr(block, "text"):
+                text_parts.append(block.text)
+
+        return "\n".join(text_parts)
+
+    async def chat_stream_async(
+        self,
+        message: str,
+        system_prompt: str | None = None,
+        **kwargs: Any,
+    ):
+        """Async streaming version of chat().
+
+        Tool calls are executed first (non-streaming), then the final
+        response is streamed back.
+
+        Args:
+            message: User message
+            system_prompt: Optional system prompt
+            **kwargs: Additional arguments for messages API
+
+        Yields:
+            String chunks of the response
+
+        Example:
+            >>> async for chunk in client.chat_stream_async("Help me debug"):
+            ...     print(chunk, end="", flush=True)
+        """
+        messages = [{"role": "user", "content": message}]
+
+        system = system_prompt or (
+            "You are a helpful assistant with access to AI skills. "
+            "Use the available tools to find and apply relevant skills "
+            "when the user asks for help with technical tasks."
+        )
+
+        async for chunk in self.chat_stream_with_messages_async(
+            messages, system=system, **kwargs
+        ):
+            yield chunk
+
+    async def chat_stream_with_messages_async(
+        self,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        system: str | None = None,
+        **kwargs: Any,
+    ):
+        """Async streaming version of chat_with_messages().
+
+        Args:
+            messages: List of message dictionaries
+            model: Override default model
+            system: System prompt
+            **kwargs: Additional arguments for messages API
+
+        Yields:
+            String chunks of the response
+        """
+        model = model or self.model
+        tools = self.get_tools() if self.auto_execute else None
+
+        api_kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": kwargs.pop("max_tokens", self.max_tokens),
+        }
+
+        if system:
+            api_kwargs["system"] = system
+
+        if tools:
+            api_kwargs["tools"] = tools
+
+        api_kwargs.update(kwargs)
+
+        # First, handle any tool calls (non-streaming)
+        response = await self.async_client.messages.create(**api_kwargs)
+
+        rounds = 0
+        while (
+            self.auto_execute
+            and response.stop_reason == "tool_use"
+            and rounds < self.max_tool_rounds
+        ):
+            rounds += 1
+
+            tool_uses = self._extract_tool_uses(response)
+            messages.append({
+                "role": "assistant",
+                "content": [block.model_dump() for block in response.content],
+            })
+            tool_results = self._process_tool_calls(tool_uses)
+            messages.append({
+                "role": "user",
+                "content": tool_results,
+            })
+
+            api_kwargs["messages"] = messages
+            response = await self.async_client.messages.create(**api_kwargs)
+
+        # Stream the final response
+        if response.stop_reason != "tool_use":
+            api_kwargs["messages"] = messages
+
+            async with self.async_client.messages.stream(
+                **{k: v for k, v in api_kwargs.items()}
+            ) as stream:
+                async for text in stream.text_stream:
                     yield text
         else:
             # Fallback if still has tool calls

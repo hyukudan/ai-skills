@@ -1043,3 +1043,117 @@ class TestValidation:
 
         schema = get_tool_schema("nonexistent_tool")
         assert schema is None
+
+
+# =============================================================================
+# Async Support Tests
+# =============================================================================
+
+
+class TestAsyncSupport:
+    """Tests for async method availability across providers."""
+
+    def test_openai_has_async_methods(self, mock_config):
+        """OpenAI should have async versions of chat methods."""
+        from aiskills.integrations.openai import OpenAISkills
+        import inspect
+
+        with patch("aiskills.core.router.get_router"):
+            client = OpenAISkills()
+
+            # Check async methods exist
+            assert hasattr(client, "chat_async")
+            assert hasattr(client, "chat_with_messages_async")
+            assert hasattr(client, "chat_stream_async")
+            assert hasattr(client, "chat_stream_with_messages_async")
+
+            # Verify they are coroutines
+            assert inspect.iscoroutinefunction(client.chat_async)
+            assert inspect.iscoroutinefunction(client.chat_with_messages_async)
+
+            # Verify async_client property is defined (don't call it - needs SDK)
+            assert "async_client" in dir(client)
+
+    def test_anthropic_has_async_methods(self, mock_config):
+        """Anthropic should have async versions of chat methods."""
+        from aiskills.integrations.anthropic import AnthropicSkills
+        import inspect
+
+        with patch("aiskills.core.router.get_router"):
+            client = AnthropicSkills()
+
+            # Check async methods exist
+            assert hasattr(client, "chat_async")
+            assert hasattr(client, "chat_with_messages_async")
+            assert hasattr(client, "chat_stream_async")
+            assert hasattr(client, "chat_stream_with_messages_async")
+
+            # Verify they are coroutines
+            assert inspect.iscoroutinefunction(client.chat_async)
+            assert inspect.iscoroutinefunction(client.chat_with_messages_async)
+
+            # Verify async_client property is defined (don't call it - needs SDK)
+            assert "async_client" in dir(client)
+
+    def test_gemini_has_async_methods(self, mock_config):
+        """Gemini should have async versions of chat methods."""
+        from aiskills.integrations.gemini import GeminiSkills
+        import inspect
+
+        with patch("aiskills.core.router.get_router"):
+            client = GeminiSkills()
+
+            # Check async methods exist
+            assert hasattr(client, "chat_async")
+            assert hasattr(client, "chat_with_messages_async")
+            assert hasattr(client, "chat_stream_async")
+
+            # Verify they are coroutines
+            assert inspect.iscoroutinefunction(client.chat_async)
+            assert inspect.iscoroutinefunction(client.chat_with_messages_async)
+
+    def test_ollama_has_async_methods(self, mock_config):
+        """Ollama should have async versions of chat methods."""
+        from aiskills.integrations.ollama import OllamaSkills
+        import inspect
+
+        with patch("aiskills.core.router.get_router"):
+            client = OllamaSkills()
+
+            # Check async methods exist
+            assert hasattr(client, "chat_async")
+            assert hasattr(client, "chat_with_messages_async")
+            assert hasattr(client, "chat_stream_async")
+            assert hasattr(client, "chat_stream_with_messages_async")
+
+            # Verify they are coroutines
+            assert inspect.iscoroutinefunction(client.chat_async)
+            assert inspect.iscoroutinefunction(client.chat_with_messages_async)
+
+            # Verify async_client property is defined (don't call it - needs SDK)
+            assert "async_client" in dir(client)
+
+    def test_all_providers_have_consistent_async_interface(self, mock_config):
+        """All providers should have the same async method names."""
+        from aiskills.integrations.openai import OpenAISkills
+        from aiskills.integrations.anthropic import AnthropicSkills
+        from aiskills.integrations.gemini import GeminiSkills
+        from aiskills.integrations.ollama import OllamaSkills
+
+        required_async_methods = [
+            "chat_async",
+            "chat_with_messages_async",
+            "chat_stream_async",
+        ]
+
+        with patch("aiskills.core.router.get_router"):
+            clients = [
+                ("openai", OpenAISkills()),
+                ("anthropic", AnthropicSkills()),
+                ("gemini", GeminiSkills()),
+                ("ollama", OllamaSkills()),
+            ]
+
+            for name, client in clients:
+                for method in required_async_methods:
+                    assert hasattr(client, method), f"{name} missing {method}"

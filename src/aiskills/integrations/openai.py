@@ -23,7 +23,7 @@ from typing import Any, TYPE_CHECKING
 from .base import BaseLLMIntegration, STANDARD_TOOLS, SkillInvocationResult
 
 if TYPE_CHECKING:
-    from openai import OpenAI
+    from openai import OpenAI, AsyncOpenAI
     from openai.types.chat import ChatCompletionMessageToolCall
 
 
@@ -69,6 +69,7 @@ class OpenAISkills(BaseLLMIntegration):
         """
         super().__init__()
         self._client = openai_client
+        self._async_client: "AsyncOpenAI | None" = None
         self.model = model
         self.auto_execute = auto_execute
         self.max_tool_rounds = max_tool_rounds
@@ -86,6 +87,20 @@ class OpenAISkills(BaseLLMIntegration):
                     "OpenAI package not installed. Install with: pip install openai"
                 )
         return self._client
+
+    @property
+    def async_client(self) -> "AsyncOpenAI":
+        """Lazy-load async OpenAI client."""
+        if self._async_client is None:
+            try:
+                from openai import AsyncOpenAI
+
+                self._async_client = AsyncOpenAI()
+            except ImportError:
+                raise ImportError(
+                    "OpenAI package not installed. Install with: pip install openai"
+                )
+        return self._async_client
 
     @property
     def provider_name(self) -> str:
@@ -425,6 +440,209 @@ class OpenAISkills(BaseLLMIntegration):
             )
 
             for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+        else:
+            # Fallback if still has tool calls
+            yield response.choices[0].message.content or ""
+
+    # ===== ASYNC METHODS =====
+
+    async def chat_async(
+        self,
+        message: str,
+        system_prompt: str | None = None,
+        **kwargs: Any,
+    ) -> str:
+        """Async version of chat().
+
+        Args:
+            message: User message
+            system_prompt: Optional system prompt (has a default)
+            **kwargs: Additional arguments for chat completions
+
+        Returns:
+            Final assistant response after all tool executions
+
+        Example:
+            >>> response = await client.chat_async("Help me debug Python")
+        """
+        messages = []
+
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        else:
+            messages.append({
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant with access to AI skills. "
+                    "Use the available tools to find and apply relevant skills "
+                    "when the user asks for help with technical tasks."
+                ),
+            })
+
+        messages.append({"role": "user", "content": message})
+
+        return await self.chat_with_messages_async(messages, **kwargs)
+
+    async def chat_with_messages_async(
+        self,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        **kwargs: Any,
+    ) -> str:
+        """Async version of chat_with_messages().
+
+        Args:
+            messages: List of message dictionaries
+            model: Override default model
+            **kwargs: Additional arguments for chat completions
+
+        Returns:
+            Final assistant response content
+
+        Example:
+            >>> messages = [{"role": "user", "content": "Help me with testing"}]
+            >>> response = await client.chat_with_messages_async(messages)
+        """
+        model = model or self.model
+        tools = self.get_tools() if self.auto_execute else None
+
+        response = await self.async_client.chat.completions.create(
+            model=model,
+            messages=messages,
+            tools=tools,
+            **kwargs,
+        )
+
+        rounds = 0
+        while (
+            self.auto_execute
+            and response.choices[0].message.tool_calls
+            and rounds < self.max_tool_rounds
+        ):
+            rounds += 1
+
+            # Add assistant message with tool calls
+            messages.append(response.choices[0].message.model_dump())
+
+            # Execute tools and add results (sync - tool execution is local)
+            tool_results = self._process_tool_calls(
+                response.choices[0].message.tool_calls
+            )
+            messages.extend(tool_results)
+
+            # Get next response
+            response = await self.async_client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=tools,
+                **kwargs,
+            )
+
+        return response.choices[0].message.content or ""
+
+    async def chat_stream_async(
+        self,
+        message: str,
+        system_prompt: str | None = None,
+        **kwargs: Any,
+    ):
+        """Async streaming version of chat().
+
+        Tool calls are executed first (non-streaming), then the final
+        response is streamed back.
+
+        Args:
+            message: User message
+            system_prompt: Optional system prompt
+            **kwargs: Additional arguments for chat completions
+
+        Yields:
+            String chunks of the response
+
+        Example:
+            >>> async for chunk in client.chat_stream_async("Help me debug"):
+            ...     print(chunk, end="", flush=True)
+        """
+        messages = []
+
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        else:
+            messages.append({
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant with access to AI skills. "
+                    "Use the available tools to find and apply relevant skills "
+                    "when the user asks for help with technical tasks."
+                ),
+            })
+
+        messages.append({"role": "user", "content": message})
+
+        async for chunk in self.chat_stream_with_messages_async(messages, **kwargs):
+            yield chunk
+
+    async def chat_stream_with_messages_async(
+        self,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        **kwargs: Any,
+    ):
+        """Async streaming version of chat_with_messages().
+
+        Args:
+            messages: List of message dictionaries
+            model: Override default model
+            **kwargs: Additional arguments for chat completions
+
+        Yields:
+            String chunks of the response
+        """
+        model = model or self.model
+        tools = self.get_tools() if self.auto_execute else None
+
+        # First, handle any tool calls (non-streaming)
+        response = await self.async_client.chat.completions.create(
+            model=model,
+            messages=messages,
+            tools=tools,
+            **kwargs,
+        )
+
+        rounds = 0
+        while (
+            self.auto_execute
+            and response.choices[0].message.tool_calls
+            and rounds < self.max_tool_rounds
+        ):
+            rounds += 1
+
+            messages.append(response.choices[0].message.model_dump())
+            tool_results = self._process_tool_calls(
+                response.choices[0].message.tool_calls
+            )
+            messages.extend(tool_results)
+
+            response = await self.async_client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=tools,
+                **kwargs,
+            )
+
+        # If no more tool calls, stream the final response
+        if not response.choices[0].message.tool_calls:
+            stream = await self.async_client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=tools,
+                stream=True,
+                **kwargs,
+            )
+
+            async for chunk in stream:
                 if chunk.choices and chunk.choices[0].delta.content:
                     yield chunk.choices[0].delta.content
         else:
