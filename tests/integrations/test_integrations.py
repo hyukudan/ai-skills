@@ -885,3 +885,161 @@ class TestInheritance:
         assert hasattr(BaseLLMIntegration, "read_skill")
         assert hasattr(BaseLLMIntegration, "list_skills")
         assert hasattr(BaseLLMIntegration, "browse_skills")
+
+
+# =============================================================================
+# Gemini Consistency Tests
+# =============================================================================
+
+
+class TestGeminiConsistency:
+    """Tests for Gemini API consistency with other providers."""
+
+    def test_gemini_has_chat_with_messages(self, mock_config):
+        """Gemini should have chat_with_messages method like other providers."""
+        from aiskills.integrations.gemini import GeminiSkills
+
+        with patch("aiskills.core.router.get_router"):
+            client = GeminiSkills()
+            assert hasattr(client, "chat_with_messages")
+            assert callable(client.chat_with_messages)
+
+    def test_gemini_execute_tool_returns_dict(self, mock_config):
+        """Gemini execute_tool should return dict like other providers."""
+        from aiskills.integrations.gemini import GeminiSkills
+
+        with patch("aiskills.core.router.get_router"):
+            client = GeminiSkills()
+            # Unknown tool should return error dict
+            result = client.execute_tool("unknown_tool", {})
+            assert isinstance(result, dict)
+            assert "error" in result
+
+    def test_gemini_execute_tool_skill_list_returns_dict(self, mock_config):
+        """Gemini skill_list should return dict with skills array."""
+        from aiskills.integrations.gemini import GeminiSkills
+
+        mock_router = MagicMock()
+        mock_router.manager.list_installed.return_value = []
+
+        with patch("aiskills.core.router.get_router", return_value=mock_router):
+            client = GeminiSkills()
+            result = client.execute_tool("skill_list", {})
+            assert isinstance(result, dict)
+            assert "skills" in result
+            assert "total" in result
+
+    def test_gemini_execute_tool_skill_browse_returns_dict(self, mock_config):
+        """Gemini skill_browse should return dict with skills array."""
+        from aiskills.integrations.gemini import GeminiSkills
+
+        mock_router = MagicMock()
+        mock_router.browse.return_value = []
+
+        with patch("aiskills.core.router.get_router", return_value=mock_router):
+            client = GeminiSkills()
+            result = client.execute_tool("skill_browse", {})
+            assert isinstance(result, dict)
+            assert "skills" in result
+            assert "total" in result
+
+
+# =============================================================================
+# Exception and Utility Tests
+# =============================================================================
+
+
+class TestExceptions:
+    """Tests for custom exceptions."""
+
+    def test_provider_error_attributes(self):
+        """ProviderError should have provider and status_code attributes."""
+        from aiskills.integrations import ProviderError
+
+        error = ProviderError("Test error", "openai", status_code=500, retryable=True)
+        assert error.provider == "openai"
+        assert error.status_code == 500
+        assert error.retryable is True
+
+    def test_rate_limit_error_is_retryable(self):
+        """RateLimitError should always be retryable."""
+        from aiskills.integrations import RateLimitError
+
+        error = RateLimitError("Rate limit", "anthropic", retry_after=5.0)
+        assert error.retryable is True
+        assert error.status_code == 429
+        assert error.retry_after == 5.0
+
+    def test_tool_validation_error_attributes(self):
+        """ToolValidationError should have tool_name and invalid_args."""
+        from aiskills.integrations import ToolValidationError
+
+        error = ToolValidationError("use_skill", "Missing param", ["context"])
+        assert error.tool_name == "use_skill"
+        assert error.invalid_args == ["context"]
+
+    def test_skill_not_found_error(self):
+        """SkillNotFoundError should contain skill name."""
+        from aiskills.integrations import SkillNotFoundError
+
+        error = SkillNotFoundError("python-debug", query="debug python")
+        assert error.skill_name == "python-debug"
+        assert error.query == "debug python"
+
+
+class TestValidation:
+    """Tests for input validation utilities."""
+
+    def test_validate_tool_arguments_missing_required(self):
+        """Should raise error for missing required parameters."""
+        from aiskills.integrations import validate_tool_arguments, ToolValidationError
+
+        with pytest.raises(ToolValidationError) as exc_info:
+            validate_tool_arguments(
+                "use_skill",
+                {},  # Missing 'context'
+                required=["context"],
+                parameters={"context": {"type": "string"}},
+            )
+        assert "context" in str(exc_info.value)
+
+    def test_validate_tool_arguments_type_mismatch(self):
+        """Should raise error for type mismatches."""
+        from aiskills.integrations import validate_tool_arguments, ToolValidationError
+
+        with pytest.raises(ToolValidationError):
+            validate_tool_arguments(
+                "skill_search",
+                {"query": 123},  # Should be string
+                required=["query"],
+                parameters={"query": {"type": "string"}},
+            )
+
+    def test_validate_tool_arguments_valid(self):
+        """Should return validated arguments for valid input."""
+        from aiskills.integrations import validate_tool_arguments
+
+        result = validate_tool_arguments(
+            "use_skill",
+            {"context": "debug python"},
+            required=["context"],
+            parameters={"context": {"type": "string"}},
+        )
+        assert result["context"] == "debug python"
+
+    def test_get_tool_schema(self):
+        """Should return schema for known tools."""
+        from aiskills.integrations import get_tool_schema
+
+        schema = get_tool_schema("use_skill")
+        assert schema is not None
+        required, params = schema
+        assert "context" in required
+        assert "context" in params
+
+    def test_get_tool_schema_unknown(self):
+        """Should return None for unknown tools."""
+        from aiskills.integrations import get_tool_schema
+
+        schema = get_tool_schema("nonexistent_tool")
+        assert schema is None

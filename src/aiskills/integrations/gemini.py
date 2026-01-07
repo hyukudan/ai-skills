@@ -230,20 +230,73 @@ class GeminiSkills(BaseLLMIntegration):
         """
         return self._create_skill_functions()
 
-    def execute_tool(self, name: str, arguments: dict[str, Any]) -> Any:
-        """Execute a tool by name (for manual handling).
+    def execute_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Execute a tool by name and return structured result.
+
+        This method provides consistent return format with other providers
+        (OpenAI, Anthropic, Ollama) for manual tool handling scenarios.
 
         Args:
-            name: Function name
-            arguments: Function arguments
+            name: Tool name (use_skill, skill_search, skill_read, skill_list, skill_browse)
+            arguments: Tool arguments
 
         Returns:
-            Function result
+            Dictionary with tool execution result (consistent with other providers)
         """
-        tools = {f.__name__: f for f in self.get_tools()}
-        if name in tools:
-            return tools[name](**arguments)
-        return f"Unknown tool: {name}"
+        if name == "use_skill":
+            result = self.use_skill(
+                context=arguments.get("context", ""),
+                variables=arguments.get("variables"),
+            )
+            return {
+                "skill_name": result.skill_name,
+                "content": result.content,
+                "score": result.score,
+                "tokens_used": result.tokens_used,
+                "error": result.error,
+            }
+
+        elif name == "skill_search":
+            result = self.search_skills(
+                query=arguments.get("query", ""),
+                limit=arguments.get("limit", 10),
+                text_only=arguments.get("text_only", False),
+            )
+            return {
+                "results": result.results,
+                "total": result.total,
+                "search_type": result.search_type,
+            }
+
+        elif name == "skill_read":
+            result = self.read_skill(
+                name=arguments.get("name", ""),
+                variables=arguments.get("variables"),
+            )
+            return {
+                "name": result.skill_name,
+                "content": result.content,
+                "error": result.error,
+            }
+
+        elif name == "skill_list":
+            skills = self.list_skills()
+            category = arguments.get("category")
+            if category:
+                skills = [s for s in skills if s.get("category") == category]
+            return {"skills": skills, "total": len(skills)}
+
+        elif name == "skill_browse":
+            results = self.browse_skills(
+                context=arguments.get("context"),
+                active_paths=arguments.get("active_paths"),
+                languages=arguments.get("languages"),
+                limit=arguments.get("limit", 20),
+            )
+            return {"skills": results, "total": len(results)}
+
+        else:
+            return {"error": f"Unknown tool: {name}"}
 
     def get_model(self) -> "GenerativeModel":
         """Get a Gemini model pre-configured with skill tools.
@@ -289,6 +342,53 @@ class GeminiSkills(BaseLLMIntegration):
         )
 
         response = chat.send_message(message)
+        return response.text
+
+    def chat_with_messages(
+        self,
+        messages: list[dict[str, Any]],
+        **kwargs: Any,
+    ) -> str:
+        """Send messages and get response with automatic function calling.
+
+        This method provides a consistent interface with other providers
+        (OpenAI, Anthropic, Ollama) for multi-turn conversations.
+
+        Args:
+            messages: List of message dictionaries with 'role' and 'content' keys
+            **kwargs: Additional arguments (ignored for compatibility)
+
+        Returns:
+            Final response content
+
+        Example:
+            >>> messages = [
+            ...     {"role": "user", "content": "Help me with Python testing"},
+            ... ]
+            >>> response = client.chat_with_messages(messages)
+        """
+        model = self.get_model()
+
+        # Convert messages to Gemini history format
+        # Gemini uses 'user' and 'model' roles
+        history = []
+        for msg in messages[:-1]:  # All but last message go to history
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            # Map assistant/system to model
+            if role in ("assistant", "system"):
+                role = "model"
+            history.append({"role": role, "parts": [content]})
+
+        # Start chat with history
+        chat = model.start_chat(
+            enable_automatic_function_calling=self.auto_function_calling,
+            history=history,
+        )
+
+        # Send the last message
+        last_message = messages[-1].get("content", "") if messages else ""
+        response = chat.send_message(last_message)
         return response.text
 
     def start_chat(
