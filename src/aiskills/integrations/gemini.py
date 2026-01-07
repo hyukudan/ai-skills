@@ -1,0 +1,388 @@
+"""Google Gemini integration for aiskills.
+
+Provides seamless integration with Google's Gemini models via function calling.
+Supports both automatic function calling and manual control.
+
+Example:
+    >>> from aiskills.integrations.gemini import GeminiSkills
+    >>>
+    >>> # Simple usage with auto function calling
+    >>> client = GeminiSkills()
+    >>> response = client.chat("Help me debug this Python memory leak")
+    >>>
+    >>> # Or get a pre-configured model
+    >>> from aiskills.integrations.gemini import create_gemini_model
+    >>> model = create_gemini_model()
+    >>> chat = model.start_chat(enable_automatic_function_calling=True)
+"""
+
+from __future__ import annotations
+
+from typing import Any, Callable, TYPE_CHECKING
+
+from .base import BaseLLMIntegration, STANDARD_TOOLS, SkillInvocationResult
+
+if TYPE_CHECKING:
+    import google.generativeai as genai
+    from google.generativeai import GenerativeModel
+    from google.generativeai.types import FunctionDeclaration
+
+
+class GeminiSkills(BaseLLMIntegration):
+    """Gemini integration with skill tools.
+
+    This class provides skill access through Google's Gemini models.
+    It can work in two modes:
+
+    1. Automatic function calling (recommended for most use cases)
+    2. Manual function handling (for custom control flow)
+
+    Features:
+        - Compatible with Gemini 1.5 Pro, Gemini 1.5 Flash
+        - Supports automatic function calling
+        - Native Python function format
+        - Full skill operations support
+
+    Example:
+        >>> client = GeminiSkills()
+        >>> response = client.chat("What tools do you have for testing?")
+
+        >>> # Or with manual control
+        >>> model = client.get_model()
+        >>> chat = model.start_chat()
+        >>> response = chat.send_message("Help me debug")
+    """
+
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model_name: str = "gemini-1.5-pro",
+        auto_function_calling: bool = True,
+    ):
+        """Initialize Gemini integration.
+
+        Args:
+            api_key: Gemini API key (uses GEMINI_API_KEY or
+                    GOOGLE_API_KEY env var if not provided)
+            model_name: Model to use (default: gemini-1.5-pro)
+            auto_function_calling: Enable automatic function calling
+        """
+        super().__init__()
+        self._api_key = api_key
+        self.model_name = model_name
+        self.auto_function_calling = auto_function_calling
+        self._model = None
+        self._genai = None
+
+    @property
+    def genai(self):
+        """Lazy-load google.generativeai module."""
+        if self._genai is None:
+            try:
+                import google.generativeai as genai
+
+                self._genai = genai
+
+                # Configure API key
+                import os
+
+                api_key = self._api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+                if api_key:
+                    genai.configure(api_key=api_key)
+
+            except ImportError:
+                raise ImportError(
+                    "google-generativeai package not installed. "
+                    "Install with: pip install google-generativeai"
+                )
+        return self._genai
+
+    @property
+    def provider_name(self) -> str:
+        return "gemini"
+
+    def _create_skill_functions(self) -> list[Callable]:
+        """Create Python functions that Gemini can call.
+
+        Gemini's function calling works best with actual Python functions
+        rather than JSON schemas. This method creates wrapper functions
+        that call the underlying skill operations.
+
+        Returns:
+            List of callable functions for Gemini
+        """
+
+        def use_skill(context: str, variables: dict | None = None) -> str:
+            """Find and use the best AI skill for your current task.
+
+            Args:
+                context: Natural language description of what you need.
+                        Examples: 'debug python memory leak', 'write unit tests'
+                variables: Optional variables to customize the skill output.
+
+            Returns:
+                The skill content or an error message.
+            """
+            result = self.use_skill(context=context, variables=variables)
+            if result.error:
+                return f"Error: {result.error}"
+            return result.content or "No content found"
+
+        def skill_search(query: str, limit: int = 10) -> str:
+            """Search for AI skills by semantic similarity.
+
+            Args:
+                query: Search query for finding skills.
+                limit: Maximum number of results (default: 10).
+
+            Returns:
+                Formatted list of matching skills.
+            """
+            result = self.search_skills(query=query, limit=limit)
+            if not result.results:
+                return "No skills found matching your query."
+
+            lines = [f"Found {result.total} skills:"]
+            for skill in result.results:
+                score = skill.get("score", "N/A")
+                lines.append(f"- {skill['name']}: {skill['description']} (score: {score})")
+            return "\n".join(lines)
+
+        def skill_read(name: str, variables: dict | None = None) -> str:
+            """Read the full content of a skill by name.
+
+            Args:
+                name: Name of the skill to read.
+                variables: Variables to render in the skill template.
+
+            Returns:
+                The skill content or an error message.
+            """
+            result = self.read_skill(name=name, variables=variables)
+            if result.error:
+                return f"Error: {result.error}"
+            return result.content or "No content found"
+
+        def skill_list(category: str | None = None) -> str:
+            """List all available AI skills.
+
+            Args:
+                category: Filter by category (optional).
+
+            Returns:
+                Formatted list of available skills.
+            """
+            skills = self.list_skills()
+            if category:
+                skills = [s for s in skills if s.get("category") == category]
+
+            if not skills:
+                return "No skills found."
+
+            lines = [f"Available skills ({len(skills)}):"]
+            for skill in skills:
+                cat = skill.get("category", "uncategorized")
+                lines.append(f"- {skill['name']} [{cat}]: {skill['description']}")
+            return "\n".join(lines)
+
+        def skill_browse(
+            context: str | None = None,
+            languages: list[str] | None = None,
+            limit: int = 20,
+        ) -> str:
+            """Browse skills with lightweight metadata.
+
+            Args:
+                context: Optional query for filtering.
+                languages: Programming languages for filtering.
+                limit: Maximum results (default: 20).
+
+            Returns:
+                Formatted list of skills with metadata.
+            """
+            results = self.browse_skills(
+                context=context,
+                languages=languages,
+                limit=limit,
+            )
+
+            if not results:
+                return "No skills found."
+
+            lines = [f"Found {len(results)} skills:"]
+            for skill in results:
+                tokens = skill.get("tokens_est", "?")
+                lines.append(
+                    f"- {skill['name']} (~{tokens} tokens): {skill['description']}"
+                )
+            return "\n".join(lines)
+
+        return [use_skill, skill_search, skill_read, skill_list, skill_browse]
+
+    def get_tools(self) -> list[Callable]:
+        """Return tool functions for Gemini.
+
+        Unlike OpenAI which uses JSON schemas, Gemini works best with
+        actual Python functions. This returns a list of callables.
+
+        Returns:
+            List of Python functions Gemini can call.
+        """
+        return self._create_skill_functions()
+
+    def execute_tool(self, name: str, arguments: dict[str, Any]) -> Any:
+        """Execute a tool by name (for manual handling).
+
+        Args:
+            name: Function name
+            arguments: Function arguments
+
+        Returns:
+            Function result
+        """
+        tools = {f.__name__: f for f in self.get_tools()}
+        if name in tools:
+            return tools[name](**arguments)
+        return f"Unknown tool: {name}"
+
+    def get_model(self) -> "GenerativeModel":
+        """Get a Gemini model pre-configured with skill tools.
+
+        Returns:
+            GenerativeModel instance with skill tools attached.
+
+        Example:
+            >>> model = client.get_model()
+            >>> chat = model.start_chat(enable_automatic_function_calling=True)
+            >>> response = chat.send_message("Help with debugging")
+        """
+        if self._model is None:
+            self._model = self.genai.GenerativeModel(
+                model_name=self.model_name,
+                tools=self.get_tools(),
+            )
+        return self._model
+
+    def chat(
+        self,
+        message: str,
+        history: list[dict[str, str]] | None = None,
+    ) -> str:
+        """Send a message and get a response with automatic function calling.
+
+        Args:
+            message: User message
+            history: Optional conversation history
+
+        Returns:
+            Model response after any function executions
+
+        Example:
+            >>> response = client.chat("What skills do you have for Python?")
+        """
+        model = self.get_model()
+
+        # Start chat with or without history
+        chat = model.start_chat(
+            enable_automatic_function_calling=self.auto_function_calling,
+            history=history or [],
+        )
+
+        response = chat.send_message(message)
+        return response.text
+
+    def start_chat(
+        self,
+        history: list[dict[str, str]] | None = None,
+    ) -> Any:
+        """Start a chat session with skill tools enabled.
+
+        Args:
+            history: Optional conversation history
+
+        Returns:
+            ChatSession object for multi-turn conversations
+
+        Example:
+            >>> chat = client.start_chat()
+            >>> response1 = chat.send_message("What skills do I have?")
+            >>> response2 = chat.send_message("Tell me more about debugging")
+        """
+        model = self.get_model()
+        return model.start_chat(
+            enable_automatic_function_calling=self.auto_function_calling,
+            history=history or [],
+        )
+
+
+def get_gemini_tools() -> list[Callable]:
+    """Get skill tools as Python functions for Gemini.
+
+    This is a convenience function to get just the tool functions
+    without creating a full client.
+
+    Returns:
+        List of Python functions for Gemini's function calling.
+
+    Example:
+        >>> import google.generativeai as genai
+        >>> from aiskills.integrations.gemini import get_gemini_tools
+        >>>
+        >>> model = genai.GenerativeModel(
+        ...     model_name='gemini-1.5-pro',
+        ...     tools=get_gemini_tools(),
+        ... )
+    """
+    client = GeminiSkills.__new__(GeminiSkills)
+    BaseLLMIntegration.__init__(client)
+    return client._create_skill_functions()
+
+
+def create_gemini_model(
+    api_key: str | None = None,
+    model_name: str = "gemini-1.5-pro",
+) -> "GenerativeModel":
+    """Create a Gemini model pre-configured with skill tools.
+
+    This is the simplest way to get a Gemini model with skills.
+
+    Args:
+        api_key: Gemini API key (uses env var if not provided)
+        model_name: Model to use (default: gemini-1.5-pro)
+
+    Returns:
+        Configured GenerativeModel with skill tools
+
+    Example:
+        >>> model = create_gemini_model()
+        >>> chat = model.start_chat(enable_automatic_function_calling=True)
+        >>> response = chat.send_message("Help me with Python debugging")
+    """
+    client = GeminiSkills(api_key=api_key, model_name=model_name)
+    return client.get_model()
+
+
+def create_gemini_client(
+    api_key: str | None = None,
+    model_name: str = "gemini-1.5-pro",
+    auto_function_calling: bool = True,
+) -> GeminiSkills:
+    """Create a GeminiSkills client.
+
+    Args:
+        api_key: Gemini API key (uses env var if not provided)
+        model_name: Model to use (default: gemini-1.5-pro)
+        auto_function_calling: Enable automatic function calling
+
+    Returns:
+        Configured GeminiSkills client
+
+    Example:
+        >>> client = create_gemini_client()
+        >>> response = client.chat("Help me debug memory leaks")
+    """
+    return GeminiSkills(
+        api_key=api_key,
+        model_name=model_name,
+        auto_function_calling=auto_function_calling,
+    )

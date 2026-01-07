@@ -42,8 +42,25 @@ api = [
     "fastapi>=0.100.0",
     "uvicorn>=0.23.0",
 ]
+# LLM provider integrations
+openai = [
+    "openai>=1.0.0",
+]
+gemini = [
+    "google-generativeai>=0.3.0",
+]
+ollama = [
+    "ollama>=0.1.0",
+]
+# Combined extras
 all = [
     "aiskills[search,mcp,api]",
+]
+llms = [
+    "aiskills[openai,gemini,ollama]",
+]
+full = [
+    "aiskills[all,llms]",
 ]
 dev = [
     "pytest>=7.0.0",

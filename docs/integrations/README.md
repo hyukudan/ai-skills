@@ -2,83 +2,121 @@
 
 aiskills is designed to be **LLM-agnostic**. This directory contains integration guides for various platforms.
 
+## Quick Start with SDK Wrappers
+
+The easiest way to integrate with any LLM:
+
+```bash
+# Install with your preferred provider
+pip install aiskills[openai]    # For OpenAI/ChatGPT
+pip install aiskills[gemini]    # For Google Gemini
+pip install aiskills[ollama]    # For Ollama/local LLMs
+pip install aiskills[llms]      # All providers
+```
+
+```python
+# OpenAI
+from aiskills.integrations import create_openai_client
+client = create_openai_client()
+response = client.chat("Help me debug this memory leak")
+
+# Gemini
+from aiskills.integrations import create_gemini_client
+client = create_gemini_client()
+response = client.chat("Help me write unit tests")
+
+# Ollama
+from aiskills.integrations import create_ollama_client
+client = create_ollama_client(model="llama3.1")
+response = client.chat("How do I optimize this SQL query?")
+```
+
 ## Supported Platforms
 
-| Platform | Integration Method | Guide |
-|----------|-------------------|-------|
-| **Claude Code** | Plugin + MCP | [/plugin](../../plugin/README.md) |
-| **Claude Desktop** | MCP Server | [README](../../README.md#mcp-server) |
-| **ChatGPT / Custom GPTs** | REST API + Actions | [chatgpt.md](./chatgpt.md) |
-| **Google Gemini** | REST API + Function Calling | [gemini.md](./gemini.md) |
-| **Other LLMs** | REST API | [other-llms.md](./other-llms.md) |
+| Platform | SDK Wrapper | REST API | Native Protocol |
+|----------|-------------|----------|-----------------|
+| **OpenAI / ChatGPT** | ✅ `create_openai_client()` | ✅ | - |
+| **Google Gemini** | ✅ `create_gemini_client()` | ✅ | - |
+| **Ollama / Local** | ✅ `create_ollama_client()` | ✅ | - |
+| **Claude Code** | - | - | ✅ Plugin + MCP |
+| **Claude Desktop** | - | - | ✅ MCP Server |
 
-## Quick Comparison
+## Integration Guides
 
-### For Claude Ecosystem
-Use **MCP Server** - native protocol, best integration:
-```bash
-aiskills mcp serve
-```
-
-### For OpenAI/ChatGPT
-Use **REST API** with OpenAI-compatible tools:
-```bash
-aiskills api serve
-# Get tools at: http://localhost:8420/openai/tools
-```
-
-### For Other LLMs
-Use **REST API** directly:
-```bash
-aiskills api serve
-# Endpoints at: http://localhost:8420/
-```
+| Platform | Guide | Method |
+|----------|-------|--------|
+| **OpenAI / ChatGPT** | [chatgpt.md](./chatgpt.md) | SDK wrapper or REST API |
+| **Google Gemini** | [gemini.md](./gemini.md) | SDK wrapper or Function Calling |
+| **Ollama / Local LLMs** | [ollama.md](./ollama.md) | SDK wrapper or CLI pipe |
+| **Claude Code** | [/plugin](../../plugin/README.md) | Plugin + MCP |
+| **Claude Desktop** | [claude_desktop.md](./claude_desktop.md) | MCP Server |
+| **Other LLMs** | [other-llms.md](./other-llms.md) | REST API |
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      aiskills                            │
-│  ┌─────────┐  ┌─────────┐  ┌─────────────────────────┐ │
-│  │   CLI   │  │   MCP   │  │       REST API          │ │
-│  │         │  │ Server  │  │ (OpenAI-compatible)     │ │
-│  └────┬────┘  └────┬────┘  └───────────┬─────────────┘ │
-│       │            │                    │               │
-│       └────────────┴────────────────────┘               │
-│                         │                               │
-│              ┌──────────┴──────────┐                    │
-│              │    Core Engine      │                    │
-│              │  - Skill Manager    │                    │
-│              │  - Registry         │                    │
-│              │  - Search           │                    │
-│              └─────────────────────┘                    │
-└─────────────────────────────────────────────────────────┘
-         │              │                 │
-         ▼              ▼                 ▼
-   Claude Code    Claude Desktop    ChatGPT/Gemini/
-     Plugin       (via MCP)         LangChain/etc
+┌─────────────────────────────────────────────────────────────┐
+│                        aiskills                              │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │              SDK Wrappers (Python)                       ││
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐                 ││
+│  │  │ OpenAI  │  │ Gemini  │  │ Ollama  │                 ││
+│  │  └────┬────┘  └────┬────┘  └────┬────┘                 ││
+│  └───────┼────────────┼────────────┼────────────────────────┘│
+│          │            │            │                         │
+│  ┌───────┴────────────┴────────────┴───────────────────────┐│
+│  │                    Core Engine                           ││
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌───────────┐  ││
+│  │  │  CLI    │  │   MCP   │  │REST API │  │  Router   │  ││
+│  │  │         │  │ Server  │  │(OpenAI) │  │           │  ││
+│  │  └─────────┘  └─────────┘  └─────────┘  └───────────┘  ││
+│  └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+         │              │              │             │
+         ▼              ▼              ▼             ▼
+    Claude Code    Claude Desktop   Custom GPT    LangChain
+      Plugin        (MCP)           Actions        Agents
 ```
 
-## Feature Matrix
+## Feature Comparison
 
-| Feature | CLI | MCP | REST API |
-|---------|-----|-----|----------|
-| List skills | ✅ | ✅ | ✅ |
-| Read skills | ✅ | ✅ | ✅ |
-| Search (semantic) | ✅ | ✅ | ✅ |
-| Search (text) | ✅ | ✅ | ✅ |
-| Suggest skills | ❌ | ✅ | ✅ |
-| Install skills | ✅ | ❌ | ❌ |
-| Variable rendering | ✅ | ✅ | ✅ |
-| OpenAI format | ❌ | ❌ | ✅ |
-| Swagger docs | ❌ | ❌ | ✅ |
+| Feature | SDK Wrappers | REST API | MCP | CLI |
+|---------|--------------|----------|-----|-----|
+| Auto tool execution | ✅ | Manual | ✅ | ❌ |
+| Streaming | ⚠️ Provider-dependent | ❌ | ❌ | ❌ |
+| Semantic search | ✅ | ✅ | ✅ | ✅ |
+| Progressive disclosure | ✅ | ✅ | ✅ | ✅ |
+| Variable rendering | ✅ | ✅ | ✅ | ✅ |
+| OpenAI format | ✅ | ✅ | ❌ | ❌ |
+| Swagger docs | ❌ | ✅ | ❌ | ❌ |
+
+## Auto-Discovery API
+
+The REST API includes an auto-discovery endpoint to help LLMs decide when to invoke skills:
+
+```bash
+curl -X POST http://localhost:8420/skills/should-invoke \
+  -H "Content-Type: application/json" \
+  -d '{"user_message": "I have a memory leak in Python", "languages": ["python"]}'
+```
+
+Response:
+```json
+{
+  "should_invoke": true,
+  "suggested_skill": "python-debugging",
+  "confidence": 0.87,
+  "matched_triggers": ["memory leak"],
+  "alternatives": ["error-diagnosis", "testing-strategies"]
+}
+```
 
 ## Deployment
 
 For production use:
 
-1. **Local development**: Run directly
-2. **Cloud deployment**: Use Docker or your preferred platform
-3. **Enterprise**: Consider Kubernetes with authentication
+1. **Local development**: Use SDK wrappers directly
+2. **Cloud deployment**: Run `aiskills api serve` with Docker
+3. **Enterprise**: Kubernetes with authentication
 
 See [other-llms.md](./other-llms.md#deployment-options) for detailed deployment guides.

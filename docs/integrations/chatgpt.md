@@ -1,164 +1,215 @@
-# ChatGPT Integration
+# OpenAI / ChatGPT Integration
 
-This guide explains how to use aiskills with ChatGPT, including Custom GPTs and the API.
+**Ai Skills** provides seamless integration with OpenAI models (GPT-4, GPT-3.5, Codex) via the built-in SDK wrapper or REST API.
 
-## Option 1: Custom GPT with Actions
+## Quick Start (Recommended)
 
-Create a Custom GPT that can search and read skills.
+```bash
+pip install aiskills[search] openai
+```
 
-### Setup
+```python
+from aiskills.integrations import create_openai_client
 
-1. **Start the aiskills API server:**
+# Create client with automatic tool execution
+client = create_openai_client(model="gpt-4")
+
+# Chat - skills are invoked automatically when needed
+response = client.chat("Help me debug a memory leak in Python")
+print(response)
+```
+
+The client automatically:
+- Configures OpenAI with skill tools
+- Executes tool calls in a loop
+- Returns the final response
+
+## Configuration Options
+
+```python
+from aiskills.integrations import create_openai_client
+
+client = create_openai_client(
+    api_key="sk-...",           # Or use OPENAI_API_KEY env var
+    model="gpt-4-turbo",        # Default: gpt-4
+    auto_execute=True,          # Auto-execute tool calls (default: True)
+    max_tool_rounds=5,          # Prevent infinite loops
+)
+```
+
+## Manual Tool Handling
+
+For full control over tool execution:
+
+```python
+from aiskills.integrations import create_openai_client
+
+client = create_openai_client(auto_execute=False)
+
+# Get raw completion with tool calls
+response = client.get_completion_with_skills(
+    messages=[{"role": "user", "content": "Help with testing"}],
+)
+
+# Handle tool calls yourself
+if response.choices[0].message.tool_calls:
+    for call in response.choices[0].message.tool_calls:
+        result = client.execute_tool(
+            call.function.name,
+            json.loads(call.function.arguments)
+        )
+        print(f"Tool {call.function.name}: {result}")
+```
+
+## Using with Existing OpenAI Client
+
+```python
+from openai import OpenAI
+from aiskills.integrations import get_openai_tools, OpenAISkills
+
+# Get tool definitions
+tools = get_openai_tools()
+
+# Use with your own client
+client = OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Help me debug"}],
+    tools=tools,
+)
+
+# Execute tool calls via integration
+integration = OpenAISkills()
+for call in response.choices[0].message.tool_calls or []:
+    result = integration.execute_tool(
+        call.function.name,
+        json.loads(call.function.arguments)
+    )
+```
+
+## Custom GPT with Actions
+
+For ChatGPT Custom GPTs:
+
+1. **Start the API server:**
 ```bash
 aiskills api serve
 ```
 
-2. **Expose the server** (for production, use a proper deployment):
+2. **Expose publicly** (for production):
 ```bash
 # Development: Use ngrok
 ngrok http 8420
 
-# Production: Deploy to cloud (Railway, Render, Fly.io, etc.)
+# Production: Deploy to Railway, Render, Fly.io, etc.
 ```
 
-3. **Create Custom GPT:**
+3. **Configure Custom GPT:**
    - Go to https://chat.openai.com/gpts/editor
-   - Configure name and description
-   - Go to "Configure" → "Actions"
-   - Import OpenAPI schema from `https://your-server/docs/json`
+   - Configure → Actions
+   - Import OpenAPI schema from `https://your-server/docs`
 
-### OpenAPI Schema
-
-The API automatically generates an OpenAPI schema at `/docs`. You can also get the simplified tool definitions at `/openai/tools`.
-
-### Available Actions
-
-| Action | Description |
-|--------|-------------|
-| `skill_search` | Search for skills by query |
-| `skill_read` | Read a skill's content |
-| `skill_list` | List all available skills |
-| `skill_suggest` | Get skill suggestions |
-
-### Example Custom GPT Instructions
+### Custom GPT Instructions
 
 ```
-You are an AI assistant with access to a skills library. When users ask about coding topics:
+You have access to AI Skills - a library of expert coding guides.
 
-1. Use skill_search to find relevant skills
-2. Use skill_read to get the full skill content
-3. Apply the skill's guidance to help the user
+When users ask about coding, debugging, or best practices:
+1. Use use_skill to find relevant guidance
+2. Apply the skill's advice to the user's specific problem
+3. Mention which skill you used for transparency
 
-Always search for skills before answering complex coding questions.
+Available tools:
+- use_skill: Find the best skill for a task (describe naturally)
+- skill_search: Search for skills by topic
+- skill_read: Read a specific skill by name
+- skill_list: List all available skills
 ```
 
-## Option 2: API Integration
-
-Use the REST API directly in your applications.
-
-### Endpoints
-
-```bash
-# List skills
-curl https://your-server/skills
-
-# Search skills
-curl -X POST https://your-server/skills/search \
-  -H "Content-Type: application/json" \
-  -d '{"query": "debugging python"}'
-
-# Read a skill
-curl https://your-server/skills/python-debugging
-
-# With variables
-curl -X POST https://your-server/skills/read \
-  -H "Content-Type: application/json" \
-  -d '{"name": "template-skill", "variables": {"lang": "javascript"}}'
-```
-
-### Function Calling Format
-
-Get OpenAI-compatible function definitions:
-
-```bash
-curl https://your-server/openai/tools
-```
-
-Use in your OpenAI API calls:
-
-```python
-import openai
-import requests
-
-# Get tools from aiskills
-tools_response = requests.get("https://your-server/openai/tools")
-tools = tools_response.json()["tools"]
-
-# Use with OpenAI
-response = openai.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "Help me debug this Python error"}],
-    tools=tools,
-)
-
-# Handle function calls
-if response.choices[0].message.tool_calls:
-    for call in response.choices[0].message.tool_calls:
-        result = requests.post(
-            "https://your-server/openai/call",
-            json={
-                "name": call.function.name,
-                "arguments": json.loads(call.function.arguments)
-            }
-        )
-        # Use result.json() to get the skill data
-```
-
-## Option 3: Assistants API
-
-Use with OpenAI Assistants API:
+## Assistants API
 
 ```python
 from openai import OpenAI
-import requests
+from aiskills.integrations import get_openai_tools
 
 client = OpenAI()
+tools = get_openai_tools()
 
-# Get tools
-tools = requests.get("https://your-server/openai/tools").json()["tools"]
-
-# Create assistant with tools
+# Create assistant with skills
 assistant = client.beta.assistants.create(
     name="Skill-Enhanced Assistant",
-    instructions="You have access to a skills library. Use it to help users.",
+    instructions="Use skills to help users with coding tasks.",
     model="gpt-4-turbo",
     tools=tools,
 )
 ```
 
-## Best Practices
+## REST API
 
-1. **Index your skills** before using search:
-   ```bash
-   aiskills search-index index
-   ```
+For non-Python environments:
 
-2. **Use semantic search** for natural language queries
+```bash
+# Start server
+aiskills api serve
 
-3. **Cache skill content** if making frequent requests
+# Get OpenAI-compatible tools
+curl http://localhost:8420/openai/tools
 
-4. **Deploy securely** - use HTTPS and authentication in production
+# Execute function call
+curl -X POST http://localhost:8420/openai/call \
+  -H "Content-Type: application/json" \
+  -d '{"name": "use_skill", "arguments": {"context": "debug python"}}'
+```
+
+## Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `use_skill` | Find and use the best skill for a task |
+| `skill_search` | Search skills by semantic similarity |
+| `skill_read` | Read a specific skill by name |
+| `skill_list` | List all available skills |
+| `skill_suggest` | Get skill suggestions for context |
+
+## Example: Code Review Bot
+
+```python
+from aiskills.integrations import create_openai_client
+
+client = create_openai_client(model="gpt-4")
+
+response = client.chat("""
+Review this code and suggest improvements:
+
+def fetch_users():
+    users = []
+    for i in range(1000):
+        response = requests.get(f"/api/users/{i}")
+        users.append(response.json())
+    return users
+""")
+
+print(response)
+# GPT-4 will use skills like "code-review" or "python-best-practices"
+```
+
+## Supported Models
+
+- **gpt-4**, **gpt-4-turbo** - Best quality, recommended
+- **gpt-4o**, **gpt-4o-mini** - Latest models
+- **gpt-3.5-turbo** - Faster, good for simple queries
+- **o1**, **o1-mini** - Reasoning models (limited tool support)
 
 ## Troubleshooting
 
-### Skills not found
-- Ensure skills are installed: `aiskills list`
-- Re-index: `aiskills search-index index --rebuild`
+### Rate limits
+- Use `gpt-3.5-turbo` for development
+- Implement retry logic with exponential backoff
 
-### Search returns no results
-- Check if search extras are installed: `pip install aiskills[search]`
-- Use text search as fallback: `{"text_only": true}`
+### Tool calls not working
+- Ensure `tools` parameter is passed to the API
+- Check that skill content isn't too long (context limits)
 
-### Connection refused
-- Verify server is running: `aiskills api serve`
-- Check port: default is 8420
+### Connection issues
+- Verify `OPENAI_API_KEY` is set
+- Check OpenAI API status: https://status.openai.com

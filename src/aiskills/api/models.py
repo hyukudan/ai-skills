@@ -273,3 +273,44 @@ class OpenAIFunctionResponse(BaseModel):
 
     name: str
     content: str  # JSON string of result
+
+
+# ─────────────────────────────────────────────────────────────────
+# Auto-Discovery Models
+# ─────────────────────────────────────────────────────────────────
+
+
+class ShouldInvokeRequest(BaseModel):
+    """Request for skill auto-discovery."""
+
+    user_message: str = Field(description="The user's message or query")
+    active_paths: list[str] | None = Field(
+        default=None, description="File paths being worked on"
+    )
+    languages: list[str] | None = Field(
+        default=None, description="Programming languages in context"
+    )
+    recent_context: str | None = Field(
+        default=None, description="Recent conversation context"
+    )
+
+
+class ShouldInvokeResponse(BaseModel):
+    """Response for skill auto-discovery."""
+
+    should_invoke: bool = Field(description="Whether a skill should be invoked")
+    suggested_skill: str | None = Field(
+        default=None, description="Name of the suggested skill"
+    )
+    confidence: float = Field(
+        default=0.0, ge=0.0, le=1.0, description="Confidence score (0-1)"
+    )
+    reason: str | None = Field(
+        default=None, description="Explanation for the suggestion"
+    )
+    matched_triggers: list[str] = Field(
+        default_factory=list, description="Keywords that triggered the suggestion"
+    )
+    alternatives: list[str] = Field(
+        default_factory=list, description="Alternative skills that could help"
+    )

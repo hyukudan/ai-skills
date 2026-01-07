@@ -1,153 +1,202 @@
 # Ollama & Local LLM Integration
 
-**Ai Skills** is designed to work perfectly with local LLMs running via **Ollama**, **Llama.cpp**, or similar tools. Since local LLMs often have limited context windows, purely injecting *all* skills is impossible. Ai Skills solves this by dynamically retrieving only the relevant skills.
+**Ai Skills** provides excellent support for local LLMs via Ollama. The built-in SDK wrapper handles tool calling automatically, with fallback options for models that don't support it.
 
-## Strategy
+## Quick Start (Recommended)
 
-There are three main ways to use Ai Skills with Ollama:
-
-1.  **CLI Pipe (Easiest)**: Pipe skill content directly into your Ollama prompt.
-2.  **Python Agent**: Use a Python script to orchestrate with tool calling.
-3.  **REST API**: Connect via HTTP for any language/framework.
-
-## Method 1: CLI Pipelining
-
-This is great for one-off queries where you know which skill you want.
-
-**Example: Use skill directly**
 ```bash
-# Find and use the best skill for your task
+pip install aiskills[search] ollama
+```
+
+```python
+from aiskills.integrations import create_ollama_client
+
+# Create client - auto-detects tool calling support
+client = create_ollama_client(model="llama3.1")
+
+# Chat with automatic skill invocation
+response = client.chat("Help me debug a memory leak in Python")
+print(response)
+```
+
+The client automatically:
+- Detects if your model supports tool calling
+- Executes skill lookups when the model requests them
+- Falls back to prompt injection for non-tool models
+
+## Tool Calling vs Prompt Injection
+
+### Models with Tool Calling (Recommended)
+
+These models support native tool/function calling:
+- **llama3.1**, **llama3.2** - Excellent support
+- **mistral**, **mixtral** - Good support
+- **qwen2**, **qwen2.5** - Strong support
+- **command-r**, **command-r-plus** - Native support
+
+```python
+from aiskills.integrations import create_ollama_client
+
+# Tool calling is auto-enabled for supported models
+client = create_ollama_client(model="llama3.1")
+response = client.chat("How do I write unit tests in Python?")
+```
+
+### Models without Tool Calling
+
+For models like `codellama`, use prompt injection:
+
+```python
+from aiskills.integrations import create_ollama_client
+
+# Disable tools, use prompt injection instead
+client = create_ollama_client(model="codellama", use_tools=False)
+
+# Skill is loaded into context automatically
+response = client.chat_with_skill(
+    skill_query="python unit testing",
+    user_message="Write tests for this function: def add(a, b): return a + b"
+)
+```
+
+## CLI Pipelining
+
+For quick one-off queries:
+
+```bash
+# Find and pipe skill content to Ollama
 aiskills use "debug python memory leak" | ollama run llama3 "Apply this to my code"
 
-# Or search and read specific skills
+# Search and read specific skill
 SKILL=$(aiskills search "linux networking" --limit 1 --name-only)
 aiskills read $SKILL | ollama run llama3 "How do I check open ports?"
 ```
 
-## Method 2: Python Agent (Recommended)
+## Manual Tool Integration
 
-For a more interactive experience, use the Ollama Python SDK with AI Skills tools.
-
-### Prerequisites
-```bash
-pip install aiskills ollama
-```
-
-### Agent Script (`agent.py`)
+For full control:
 
 ```python
+from aiskills.integrations import get_ollama_tools
 import ollama
-from aiskills.core.router import get_router
 
-router = get_router()
+# Get tool definitions
+tools = get_ollama_tools()
 
-# System prompt that enables proactive skill usage
-SYSTEM_PROMPT = """You have access to AI Skills - a library of expert coding knowledge.
+# Use with ollama.chat directly
+response = ollama.chat(
+    model='llama3.1',
+    messages=[{'role': 'user', 'content': 'Help me debug this code'}],
+    tools=tools,
+)
 
-Available tools:
-- use_skill: Find the best skill for a task. Describe what you need.
-
-IMPORTANT: When users ask about coding, debugging, or best practices,
-ALWAYS call use_skill first to get expert guidance before answering.
-
-Example: If user asks "help me with Python memory leaks", 
-call use_skill with context="debug python memory leak" first."""
-
-# Define tools for Ollama
-tools = [
-    {
-        'type': 'function',
-        'function': {
-            'name': 'use_skill',
-            'description': 'Find and use the best AI skill for a task. Returns expert guidance.',
-            'parameters': {
-                'type': 'object',
-                'properties': {
-                    'context': {
-                        'type': 'string',
-                        'description': 'Natural language description of what you need help with',
-                    },
-                },
-                'required': ['context'],
-            },
-        },
-    },
-]
-
-def handle_tool_call(tool_call):
-    """Handle tool calls from the model."""
-    name = tool_call['function']['name']
-    args = tool_call['function']['arguments']
-    
-    if name == 'use_skill':
-        result = router.use(context=args['context'])
-        return f"**Skill: {result.skill_name}** (score: {result.score:.0%})\n\n{result.content}"
-    
-    return "Unknown tool"
-
-# Simple chat loop
-messages = [{'role': 'system', 'content': SYSTEM_PROMPT}]
-
-while True:
-    user_input = input("You: ")
-    if user_input.lower() in ['exit', 'quit']:
-        break
-        
-    messages.append({'role': 'user', 'content': user_input})
-
-    response = ollama.chat(
-        model='llama3.1',
-        messages=messages,
-        tools=tools,
-    )
-    
-    # Handle tool calls
-    if response['message'].get('tool_calls'):
-        for tool in response['message']['tool_calls']:
-            print(f"🔍 Using skill for: {tool['function']['arguments'].get('context', '...')}")
-            result = handle_tool_call(tool)
-            messages.append({'role': 'tool', 'content': result})
-
-        # Get final response with tool outputs
-        response = ollama.chat(model='llama3.1', messages=messages)
-    
-    print("Bot:", response['message']['content'])
-    messages.append(response['message'])
+# Handle tool calls manually if needed
+if response['message'].get('tool_calls'):
+    # Process tool calls...
+    pass
 ```
 
-## Method 3: REST API
+## Configuration Options
 
-For any language, use the REST API:
+```python
+from aiskills.integrations import create_ollama_client
+
+client = create_ollama_client(
+    model="llama3.1",           # Model name
+    host="http://localhost:11434",  # Ollama server (default)
+    use_tools=True,             # Auto-detected if None
+    max_tool_rounds=5,          # Prevent infinite loops
+)
+```
+
+## Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `use_skill` | Find and use the best skill for a task |
+| `skill_search` | Search skills by query |
+| `skill_read` | Read a specific skill by name |
+| `skill_list` | List all available skills |
+| `skill_browse` | Browse skills with metadata |
+
+## Generation Mode
+
+For completions (non-chat):
+
+```python
+from aiskills.integrations import create_ollama_client
+
+client = create_ollama_client(model="codellama", use_tools=False)
+
+# Generate with skill context
+code = client.generate_with_skill(
+    skill_query="python unit testing",
+    prompt="Write pytest tests for: def multiply(a, b): return a * b"
+)
+```
+
+## REST API Alternative
+
+For any language:
 
 ```bash
-# Start the server
+# Start server
 aiskills api serve
 
-# Use skill via HTTP
+# Get skill via HTTP
 curl -X POST http://localhost:8420/skills/use \
   -H "Content-Type: application/json" \
   -d '{"context": "optimize SQL queries"}'
 ```
 
-## System Prompt Template
+## Example: Interactive Agent
 
-Add this to your LLM's system prompt to enable proactive skill usage:
+```python
+from aiskills.integrations import create_ollama_client
 
+client = create_ollama_client(model="llama3.1")
+
+# Simple chat loop
+while True:
+    user_input = input("You: ")
+    if user_input.lower() in ['exit', 'quit']:
+        break
+
+    response = client.chat(user_input)
+    print(f"Bot: {response}\n")
 ```
-You have access to AI Skills via the use_skill tool. These are expert-crafted
-guides for coding tasks.
 
-GUIDELINES:
-1. When users ask about coding, debugging, or optimization - CALL use_skill FIRST
-2. Describe the task naturally: "debug python memory leak", "write unit tests"
-3. Apply the skill's guidance to the user's specific problem
-4. Mention which skill you used for transparency
+## Checking Model Availability
+
+```python
+from aiskills.integrations import create_ollama_client
+
+client = create_ollama_client(model="llama3.1")
+
+# Check if model is available
+if client.is_model_available():
+    response = client.chat("Hello!")
+else:
+    print("Model not installed. Run: ollama pull llama3.1")
+
+# List all local models
+models = client.list_local_models()
+for model in models:
+    print(f"- {model['name']}")
 ```
 
-## Supported Models
+## Troubleshooting
 
--   **Llama 3.1 & 3.2**: Excellent tool calling support.
--   **Mistral**: Good instruction following.
--   **Qwen 2.5**: Strong tool calling in newer versions.
--   **DeepSeek**: Works well with function calling.
+### Tool calls not working
+- Ensure you're using a tool-capable model (llama3.1, mistral, etc.)
+- Try `use_tools=True` to force tool mode
+- Check Ollama version: `ollama --version` (need 0.1.24+)
 
+### Model not found
+- Pull the model: `ollama pull llama3.1`
+- Check available models: `ollama list`
+
+### Slow responses
+- Use smaller models for faster inference
+- Consider `gemma2:2b` for quick responses
+- Use `chat_with_skill()` instead of tool calling for simpler flows

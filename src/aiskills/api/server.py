@@ -25,6 +25,8 @@ from .models import (
     SearchRequest,
     SearchResponse,
     SearchResult,
+    ShouldInvokeRequest,
+    ShouldInvokeResponse,
     SkillBrowseInfo,
     SkillInfo,
     SkillResourceInfo,
@@ -329,6 +331,139 @@ def create_app():
             matched_query=result.matched_query,
             available_resources=result.available_resources,
             tokens_used=result.tokens_used,
+        )
+
+    # ─────────────────────────────────────────────────────────────────
+    # Auto-Discovery API
+    # ─────────────────────────────────────────────────────────────────
+
+    @app.post("/skills/should-invoke", response_model=ShouldInvokeResponse)
+    async def should_invoke_skill(request: ShouldInvokeRequest):
+        """Determine if a skill should be invoked based on user message.
+
+        This endpoint analyzes the user's message and context to suggest
+        whether a skill should be used. It checks:
+        - Semantic similarity with available skills
+        - Trigger keywords defined in skill scopes
+        - File path and language context matching
+
+        Use this to implement auto-invocation in your LLM integration.
+
+        Example:
+            POST /skills/should-invoke
+            {
+                "user_message": "I have a memory leak in my Python app",
+                "languages": ["python"]
+            }
+
+            Response:
+            {
+                "should_invoke": true,
+                "suggested_skill": "python-debugging",
+                "confidence": 0.87,
+                "reason": "Message matches debugging triggers and Python scope",
+                "matched_triggers": ["memory leak"]
+            }
+        """
+        from ..core.router import get_router
+        from ..core.scoping import ScopeContext
+
+        router = get_router()
+
+        # Create scope context
+        scope_ctx = ScopeContext(
+            active_paths=request.active_paths or [],
+            languages=request.languages or [],
+            query=request.user_message,
+        )
+
+        # Get all skills and check triggers
+        all_skills = router.registry.list_all()
+        message_lower = request.user_message.lower()
+
+        # Check for trigger matches
+        trigger_matches: dict[str, list[str]] = {}
+        for skill_idx in all_skills:
+            skill = router.manager.get(skill_idx.name)
+            if skill and skill.manifest.scope:
+                triggers = skill.manifest.scope.triggers or []
+                matched = [t for t in triggers if t.lower() in message_lower]
+                if matched:
+                    trigger_matches[skill_idx.name] = matched
+
+        # Do semantic search
+        try:
+            semantic_results = router.registry.search(
+                query=request.user_message,
+                limit=5,
+                min_score=0.3,
+            )
+            semantic_matches = {idx.name: score for idx, score in semantic_results}
+        except Exception:
+            semantic_matches = {}
+
+        # Combine trigger and semantic matches
+        combined_scores: dict[str, float] = {}
+
+        for name, triggers in trigger_matches.items():
+            # Trigger match gives a base score
+            combined_scores[name] = 0.5 + (0.1 * len(triggers))
+
+        for name, score in semantic_matches.items():
+            if name in combined_scores:
+                # Combine with trigger score
+                combined_scores[name] = min(1.0, combined_scores[name] + score * 0.5)
+            else:
+                combined_scores[name] = score * 0.8  # Pure semantic match
+
+        # Apply scope filtering
+        if request.active_paths or request.languages:
+            filtered = router.scope_matcher.filter_by_scope(all_skills, scope_ctx)
+            scope_matched_names = {idx.name for idx, _ in filtered}
+
+            # Boost scores for scope-matched skills
+            for name in combined_scores:
+                if name in scope_matched_names:
+                    combined_scores[name] = min(1.0, combined_scores[name] + 0.1)
+
+        if not combined_scores:
+            return ShouldInvokeResponse(
+                should_invoke=False,
+                confidence=0.0,
+                reason="No matching skills found for this message",
+            )
+
+        # Get best match
+        sorted_matches = sorted(
+            combined_scores.items(),
+            key=lambda x: x[1],
+            reverse=True,
+        )
+
+        best_name, best_score = sorted_matches[0]
+        matched_triggers = trigger_matches.get(best_name, [])
+
+        # Determine if we should invoke (threshold: 0.4)
+        should_invoke = best_score >= 0.4
+
+        # Build reason
+        reasons = []
+        if matched_triggers:
+            reasons.append(f"Matched triggers: {', '.join(matched_triggers)}")
+        if best_name in semantic_matches:
+            reasons.append(f"Semantic match score: {semantic_matches[best_name]:.2f}")
+        reason = ". ".join(reasons) if reasons else "Score threshold met"
+
+        # Get alternatives
+        alternatives = [name for name, _ in sorted_matches[1:4]]
+
+        return ShouldInvokeResponse(
+            should_invoke=should_invoke,
+            suggested_skill=best_name if should_invoke else None,
+            confidence=round(best_score, 3),
+            reason=reason,
+            matched_triggers=matched_triggers,
+            alternatives=alternatives,
         )
 
     # ─────────────────────────────────────────────────────────────────
