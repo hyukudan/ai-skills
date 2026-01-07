@@ -13,7 +13,7 @@
 **Universal AI Knowledge for Everyone**
 *Write skills once. Use them with Claude, ChatGPT, Gemini, and Ollama.*
 
-[Quick Start](#-quick-start) • [Core Concepts](#-core-concepts) • [Integrations](#-integrations) • [Architecture](#-architecture) • [Documentation](#-documentation)
+[Quick Start](#-quick-start) • [Core Concepts](#-core-concepts) • [Integrations](#-integrations) • [Architecture](#-architecture) • [Documentation](#-documentation) • [Examples](#examples--notebooks)
 
 </div>
 
@@ -324,6 +324,35 @@ Cross-provider tests ensure:
 - No provider-specific bias in skill behavior
 
 📖 [Full Guide](docs/testing/multi-llm.md)
+
+### Examples & Notebooks
+
+Ready-to-run examples for all supported providers:
+
+```bash
+# Install for your provider
+pip install aiskills[llms]  # All providers
+pip install jupyter         # For notebooks
+```
+
+| Resource | Description |
+|----------|-------------|
+| [**Examples README**](examples/README.md) | Setup guide, code samples, troubleshooting |
+| [**Provider Comparison**](docs/provider-comparison.md) | Feature matrix, costs, when to use each |
+| [**OpenAI Notebook**](examples/notebooks/openai_quickstart.ipynb) | GPT-4 with function calling |
+| [**Anthropic Notebook**](examples/notebooks/anthropic_claude.ipynb) | Claude 3.5 with tool use |
+| [**Gemini Notebook**](examples/notebooks/gemini_colab.ipynb) | Gemini with auto function calling |
+| [**Ollama Notebook**](examples/notebooks/ollama_local.ipynb) | Local llama3.1 with tools |
+| [**Multi-Provider Script**](examples/multi_provider.py) | Fallback chains, parallel queries |
+
+**Quick example:**
+```python
+from aiskills.integrations import create_openai_client
+
+client = create_openai_client(auto_execute=True, max_tool_rounds=5)
+response = client.chat("Help me debug a Python memory leak")
+print(response)  # Includes skill content automatically
+```
 
 ### API Reference
 
