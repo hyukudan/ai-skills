@@ -32,11 +32,23 @@ Example usage:
 
 from .agents_md import generate_agents_md, sync_agents_md
 from .base import (
+    # Base classes
     BaseLLMIntegration,
     SkillInvocationResult,
     SearchResult,
     ToolDefinition,
     STANDARD_TOOLS,
+    # Exceptions
+    AISkillsError,
+    ProviderError,
+    RateLimitError,
+    ToolExecutionError,
+    ToolValidationError,
+    SkillNotFoundError,
+    # Utilities
+    retry_with_backoff,
+    validate_tool_arguments,
+    get_tool_schema,
 )
 
 # Lazy imports for optional dependencies
@@ -104,6 +116,17 @@ __all__ = [
     "SearchResult",
     "ToolDefinition",
     "STANDARD_TOOLS",
+    # Exceptions
+    "AISkillsError",
+    "ProviderError",
+    "RateLimitError",
+    "ToolExecutionError",
+    "ToolValidationError",
+    "SkillNotFoundError",
+    # Utilities
+    "retry_with_backoff",
+    "validate_tool_arguments",
+    "get_tool_schema",
     # Client factories
     "create_openai_client",
     "create_anthropic_client",
