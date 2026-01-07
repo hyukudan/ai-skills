@@ -101,6 +101,51 @@ async def handle_skill_search(arguments: dict[str, Any]) -> dict[str, Any]:
                 for idx in results
             ],
         }
+    elif input_data.hybrid:
+        # Hybrid search (semantic + BM25)
+        try:
+            results = registry.search_hybrid(
+                query=input_data.query,
+                limit=input_data.limit,
+                tags=input_data.tags,
+                category=input_data.category,
+            )
+            return {
+                "type": "hybrid_search",
+                "query": input_data.query,
+                "results": [
+                    {
+                        "name": idx.name,
+                        "version": idx.version,
+                        "description": idx.description,
+                        "tags": idx.tags,
+                        "category": idx.category,
+                        "score": round(score, 3),
+                    }
+                    for idx, score in results
+                ],
+            }
+        except Exception as e:
+            # Fallback to text search if hybrid fails
+            error_msg = str(e)
+            if "not installed" in error_msg.lower():
+                results = registry.search_text(input_data.query, limit=input_data.limit)
+                return {
+                    "type": "text_search",
+                    "query": input_data.query,
+                    "note": "Hybrid search unavailable, using text search",
+                    "results": [
+                        {
+                            "name": idx.name,
+                            "version": idx.version,
+                            "description": idx.description,
+                            "tags": idx.tags,
+                            "category": idx.category,
+                        }
+                        for idx in results
+                    ],
+                }
+            raise
     else:
         # Semantic search
         try:
