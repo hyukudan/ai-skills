@@ -33,6 +33,13 @@ def status() -> None:
     except ImportError:
         table.add_row("Gemini", "google-generativeai", "❌ Not installed")
 
+    # Check Anthropic
+    try:
+        import anthropic
+        table.add_row("Anthropic", "anthropic", "✅ Installed")
+    except ImportError:
+        table.add_row("Anthropic", "anthropic", "❌ Not installed")
+
     # Check Ollama
     try:
         import ollama
@@ -41,7 +48,7 @@ def status() -> None:
         table.add_row("Ollama", "ollama", "❌ Not installed")
 
     console.print(table)
-    console.print("\n[dim]Install with: pip install aiskills[openai|gemini|ollama|llms][/dim]")
+    console.print("\n[dim]Install with: pip install aiskills[openai|anthropic|gemini|ollama|llms][/dim]")
 
 
 @app.command(name="openai")
@@ -102,6 +109,39 @@ def test_gemini(
     with console.status("Sending message..."):
         try:
             client = create_gemini_client(model_name=model)
+            response = client.chat(message)
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            raise typer.Exit(1)
+
+    console.print(Panel(response, title="Response", border_style="green"))
+
+
+@app.command(name="anthropic")
+def test_anthropic(
+    message: str = typer.Argument(
+        "What skills do you have?",
+        help="Message to send"
+    ),
+    model: str = typer.Option("claude-sonnet-4-20250514", "--model", "-m", help="Model to use"),
+) -> None:
+    """Test Anthropic Claude integration."""
+    try:
+        from ..integrations.anthropic import create_anthropic_client
+    except ImportError:
+        console.print("[red]Anthropic not installed. Run: pip install aiskills[anthropic][/red]")
+        raise typer.Exit(1)
+
+    import os
+    if "ANTHROPIC_API_KEY" not in os.environ:
+        console.print("[red]ANTHROPIC_API_KEY not set[/red]")
+        raise typer.Exit(1)
+
+    console.print(f"[cyan]Testing Anthropic Claude ({model})...[/cyan]\n")
+
+    with console.status("Sending message..."):
+        try:
+            client = create_anthropic_client(model=model)
             response = client.chat(message)
         except Exception as e:
             console.print(f"[red]Error: {e}[/red]")
@@ -198,13 +238,16 @@ def list_ollama_models() -> None:
 def show_tools(
     provider: str = typer.Argument(
         "openai",
-        help="Provider format: openai, gemini, ollama"
+        help="Provider format: openai, anthropic, gemini, ollama"
     ),
 ) -> None:
     """Show tool definitions for a provider."""
     if provider == "openai":
         from ..integrations.openai import get_openai_tools
         tools = get_openai_tools()
+    elif provider == "anthropic":
+        from ..integrations.anthropic import get_anthropic_tools
+        tools = get_anthropic_tools()
     elif provider == "ollama":
         from ..integrations.ollama import get_ollama_tools
         tools = get_ollama_tools()
@@ -221,15 +264,23 @@ def show_tools(
         return
     else:
         console.print(f"[red]Unknown provider: {provider}[/red]")
-        console.print("[dim]Options: openai, gemini, ollama[/dim]")
+        console.print("[dim]Options: openai, anthropic, gemini, ollama[/dim]")
         raise typer.Exit(1)
 
-    # Show OpenAI/Ollama format tools
+    # Show tool definitions
     console.print(f"[cyan]{provider.title()} Tools:[/cyan]\n")
     for tool in tools:
-        func = tool.get("function", {})
-        console.print(f"  • [green]{func.get('name', 'unknown')}[/green]")
-        desc = func.get("description", "")[:80]
+        # Handle both OpenAI format (nested under "function") and Anthropic format (flat)
+        if "function" in tool:
+            func = tool.get("function", {})
+            name = func.get("name", "unknown")
+            desc = func.get("description", "")[:80]
+            params = list(func.get("parameters", {}).get("properties", {}).keys())
+        else:
+            name = tool.get("name", "unknown")
+            desc = tool.get("description", "")[:80]
+            params = list(tool.get("input_schema", {}).get("properties", {}).keys())
+
+        console.print(f"  • [green]{name}[/green]")
         console.print(f"    {desc}...")
-        params = list(func.get("parameters", {}).get("properties", {}).keys())
         console.print(f"    Parameters: {params}\n")

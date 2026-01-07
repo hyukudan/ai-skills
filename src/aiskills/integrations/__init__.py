@@ -2,6 +2,7 @@
 
 This module provides integrations with various LLM providers:
 - OpenAI (GPT-4, GPT-3.5, Codex)
+- Anthropic (Claude 3.5, Claude 3)
 - Google Gemini
 - Ollama (local models)
 - AGENTS.md format
@@ -13,15 +14,20 @@ Example usage:
     client = create_openai_client()
     response = client.chat("Help me debug Python")
 
+    # Anthropic Claude
+    from aiskills.integrations import create_anthropic_client
+    client = create_anthropic_client()
+    response = client.chat("Help me with testing")
+
     # Gemini
     from aiskills.integrations import create_gemini_client
     client = create_gemini_client()
-    response = client.chat("Help me with testing")
+    response = client.chat("Help me optimize SQL")
 
     # Ollama
     from aiskills.integrations import create_ollama_client
     client = create_ollama_client(model="llama3.1")
-    response = client.chat("Help me optimize SQL")
+    response = client.chat("Explain async patterns")
 """
 
 from .agents_md import generate_agents_md, sync_agents_md
@@ -58,6 +64,12 @@ def create_ollama_client(*args, **kwargs):
     return _create(*args, **kwargs)
 
 
+def create_anthropic_client(*args, **kwargs):
+    """Create an Anthropic client with skill tools. Requires: pip install anthropic"""
+    from .anthropic import create_anthropic_client as _create
+    return _create(*args, **kwargs)
+
+
 def get_openai_tools():
     """Get skill tools in OpenAI function calling format."""
     from .openai import get_openai_tools as _get
@@ -76,6 +88,12 @@ def get_ollama_tools():
     return _get()
 
 
+def get_anthropic_tools():
+    """Get skill tools in Anthropic tool use format."""
+    from .anthropic import get_anthropic_tools as _get
+    return _get()
+
+
 __all__ = [
     # AGENTS.md
     "generate_agents_md",
@@ -88,11 +106,13 @@ __all__ = [
     "STANDARD_TOOLS",
     # Client factories
     "create_openai_client",
+    "create_anthropic_client",
     "create_gemini_client",
     "create_gemini_model",
     "create_ollama_client",
     # Tool getters
     "get_openai_tools",
+    "get_anthropic_tools",
     "get_gemini_tools",
     "get_ollama_tools",
 ]

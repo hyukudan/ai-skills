@@ -128,16 +128,67 @@ print(result.content)      # → Rendered skill content
 
 ## 🔌 Integrations
 
-Connect your skills to your favorite tools.
+Connect your skills to your favorite LLMs with just 3 lines of code.
 
-| Platform | Integration Method | Status | Guide |
-| :--- | :--- | :--- | :--- |
-| **Claude Desktop** | MCP Server | ✅ Ready | [**Setup Guide**](docs/integrations/claude_desktop.md) |
-| **Google Gemini** | Function Calling | ✅ Ready | [**Gemini Guide**](docs/integrations/gemini.md) |
-| **Ollama / Local** | Tool Calling / CLI | ✅ Ready | [**Ollama Guide**](docs/integrations/ollama.md) |
-| **ChatGPT** | Custom GPT / Actions | ✅ Ready | [ChatGPT Guide](docs/integrations/chatgpt.md) |
-| **Claude Code** | Plugin | ✅ Ready | [Plugin Guide](plugin/README.md) |
-| **Custom Agents** | Python SDK | ✅ Ready | [SDK Docs](docs/sdk.md) |
+### Quick Start (SDK Wrappers)
+
+```bash
+# Install with your preferred provider
+pip install aiskills[openai]     # OpenAI/ChatGPT
+pip install aiskills[anthropic]  # Claude API
+pip install aiskills[gemini]     # Google Gemini
+pip install aiskills[ollama]     # Local LLMs
+pip install aiskills[llms]       # All providers
+```
+
+```python
+# OpenAI
+from aiskills.integrations import create_openai_client
+client = create_openai_client()
+response = client.chat("Help me debug this memory leak")
+
+# Anthropic Claude
+from aiskills.integrations import create_anthropic_client
+client = create_anthropic_client()
+response = client.chat("How do I write better tests?")
+
+# Google Gemini
+from aiskills.integrations import create_gemini_client
+client = create_gemini_client()
+response = client.chat("Optimize my SQL queries")
+
+# Ollama (local)
+from aiskills.integrations import create_ollama_client
+client = create_ollama_client(model="llama3.1")
+response = client.chat("Explain async patterns")
+```
+
+### Platform Support
+
+| Platform | SDK Wrapper | REST API | Native Protocol | Guide |
+| :--- | :--- | :--- | :--- | :--- |
+| **OpenAI / ChatGPT** | `create_openai_client()` | ✅ | - | [Guide](docs/integrations/chatgpt.md) |
+| **Anthropic Claude** | `create_anthropic_client()` | ✅ | - | [Guide](docs/integrations/anthropic.md) |
+| **Google Gemini** | `create_gemini_client()` | ✅ | - | [Guide](docs/integrations/gemini.md) |
+| **Ollama / Local** | `create_ollama_client()` | ✅ | - | [Guide](docs/integrations/ollama.md) |
+| **Claude Desktop** | - | - | MCP Server | [Guide](docs/integrations/claude_desktop.md) |
+| **Claude Code** | - | - | Plugin + MCP | [Guide](plugin/README.md) |
+
+### CLI Integration Testing
+
+```bash
+# Check which integrations are available
+aiskills llm status
+
+# Test each provider
+aiskills llm openai "What skills do you have?"
+aiskills llm anthropic "Help me with testing"
+aiskills llm gemini "Explain caching strategies"
+aiskills llm ollama "Debug my Python code"
+
+# List local Ollama models
+aiskills llm list-models
+```
 
 ## 📖 Skill Format
 
