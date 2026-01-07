@@ -46,6 +46,7 @@ def main(
 
 
 # Import and register commands
+from .commands import browse as browse_cmd
 from .commands import init as init_cmd
 from .commands import install as install_cmd
 from .commands import list as list_cmd
@@ -57,6 +58,7 @@ from .commands import use as use_cmd
 from .commands import validate as validate_cmd
 from .commands import vars as vars_cmd
 
+app.command(name="browse")(browse_cmd.browse)
 app.command(name="init")(init_cmd.init)
 app.command(name="install")(install_cmd.install)
 app.command(name="list")(list_cmd.list_skills)

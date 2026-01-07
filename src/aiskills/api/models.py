@@ -50,6 +50,36 @@ class UseRequest(BaseModel):
     variables: dict[str, Any] | None = Field(
         default=None, description="Optional variables to customize the skill"
     )
+    # Scoping context for better matching
+    active_paths: list[str] | None = Field(
+        default=None, description="File paths currently being worked on"
+    )
+    languages: list[str] | None = Field(
+        default=None, description="Programming languages in current context"
+    )
+
+
+class BrowseRequest(BaseModel):
+    """Request for browsing skills (Progressive Disclosure Phase 1)."""
+
+    context: str | None = Field(
+        default=None, description="Optional query for semantic filtering"
+    )
+    active_paths: list[str] | None = Field(
+        default=None, description="File paths for scope matching"
+    )
+    languages: list[str] | None = Field(
+        default=None, description="Languages in current context"
+    )
+    limit: int = Field(default=20, ge=1, le=100, description="Maximum results")
+    min_score: float = Field(default=0.1, ge=0.0, le=1.0, description="Minimum score")
+
+
+class ResourceRequest(BaseModel):
+    """Request for loading a skill resource (Progressive Disclosure Phase 3)."""
+
+    skill_name: str = Field(description="Name of the skill")
+    resource_name: str = Field(description="Name of the resource file to load")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -66,6 +96,40 @@ class SkillInfo(BaseModel):
     tags: list[str] = []
     category: str | None = None
     source: str = ""
+
+
+class SkillBrowseInfo(BaseModel):
+    """Lightweight skill metadata for browse phase (Progressive Disclosure Phase 1).
+
+    Contains only what's needed to decide IF to load a skill.
+    """
+
+    name: str
+    description: str
+    version: str
+    tags: list[str] = []
+    category: str | None = None
+    tokens_est: int | None = None
+    priority: int = 50
+    precedence: str = "project"
+    scope_paths: list[str] = []
+    scope_languages: list[str] = []
+    scope_triggers: list[str] = []
+    source: str = "project"
+    has_variables: bool = False
+    has_dependencies: bool = False
+
+
+class SkillResourceInfo(BaseModel):
+    """Resource information for Phase 3 of progressive disclosure."""
+
+    resource_type: str  # "reference", "template", "script", "asset"
+    path: str
+    name: str
+    size_bytes: int = 0
+    tokens_est: int | None = None
+    requires_execution: bool = False
+    allowed: bool = True
 
 
 class SearchResult(BaseModel):
@@ -109,12 +173,41 @@ class SuggestResponse(BaseModel):
 
 
 class UseResponse(BaseModel):
-    """Response for using a skill."""
+    """Response for using a skill (Phase 2: Load)."""
 
     skill_name: str
     content: str
     score: float | None = None
     matched_query: str
+    # Progressive disclosure Phase 3 info
+    available_resources: list[str] = []
+    tokens_used: int | None = None
+
+
+class BrowseResponse(BaseModel):
+    """Response for browsing skills (Progressive Disclosure Phase 1)."""
+
+    skills: list[SkillBrowseInfo]
+    total: int
+    query: str | None = None
+
+
+class ResourceResponse(BaseModel):
+    """Response for loading a resource (Progressive Disclosure Phase 3)."""
+
+    skill_name: str
+    resource_name: str
+    content: str
+    resource_type: str
+    tokens_est: int | None = None
+
+
+class ResourceListResponse(BaseModel):
+    """Response for listing available resources."""
+
+    skill_name: str
+    resources: list[SkillResourceInfo]
+    total: int
 
 
 class ErrorResponse(BaseModel):
