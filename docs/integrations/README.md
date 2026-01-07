@@ -8,10 +8,11 @@ The easiest way to integrate with any LLM:
 
 ```bash
 # Install with your preferred provider
-pip install aiskills[openai]    # For OpenAI/ChatGPT
-pip install aiskills[gemini]    # For Google Gemini
-pip install aiskills[ollama]    # For Ollama/local LLMs
-pip install aiskills[llms]      # All providers
+pip install aiskills[openai]     # For OpenAI/ChatGPT
+pip install aiskills[anthropic]  # For Anthropic Claude
+pip install aiskills[gemini]     # For Google Gemini
+pip install aiskills[ollama]     # For Ollama/local LLMs
+pip install aiskills[llms]       # All providers
 ```
 
 ```python
@@ -20,15 +21,20 @@ from aiskills.integrations import create_openai_client
 client = create_openai_client()
 response = client.chat("Help me debug this memory leak")
 
+# Anthropic Claude
+from aiskills.integrations import create_anthropic_client
+client = create_anthropic_client()
+response = client.chat("Help me write unit tests")
+
 # Gemini
 from aiskills.integrations import create_gemini_client
 client = create_gemini_client()
-response = client.chat("Help me write unit tests")
+response = client.chat("How do I optimize this SQL query?")
 
 # Ollama
 from aiskills.integrations import create_ollama_client
 client = create_ollama_client(model="llama3.1")
-response = client.chat("How do I optimize this SQL query?")
+response = client.chat("Explain async patterns in Python")
 ```
 
 ## Supported Platforms
@@ -36,6 +42,7 @@ response = client.chat("How do I optimize this SQL query?")
 | Platform | SDK Wrapper | REST API | Native Protocol |
 |----------|-------------|----------|-----------------|
 | **OpenAI / ChatGPT** | ✅ `create_openai_client()` | ✅ | - |
+| **Anthropic Claude** | ✅ `create_anthropic_client()` | ✅ | - |
 | **Google Gemini** | ✅ `create_gemini_client()` | ✅ | - |
 | **Ollama / Local** | ✅ `create_ollama_client()` | ✅ | - |
 | **Claude Code** | - | - | ✅ Plugin + MCP |
@@ -46,6 +53,7 @@ response = client.chat("How do I optimize this SQL query?")
 | Platform | Guide | Method |
 |----------|-------|--------|
 | **OpenAI / ChatGPT** | [chatgpt.md](./chatgpt.md) | SDK wrapper or REST API |
+| **Anthropic Claude** | [anthropic.md](./anthropic.md) | SDK wrapper or Tool Use |
 | **Google Gemini** | [gemini.md](./gemini.md) | SDK wrapper or Function Calling |
 | **Ollama / Local LLMs** | [ollama.md](./ollama.md) | SDK wrapper or CLI pipe |
 | **Claude Code** | [/plugin](../../plugin/README.md) | Plugin + MCP |

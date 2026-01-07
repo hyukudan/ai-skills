@@ -327,6 +327,112 @@ class OllamaSkills(BaseLLMIntegration):
 
         return response.get("message", {}).get("content", "")
 
+    def chat_stream(
+        self,
+        message: str,
+        system_prompt: str | None = None,
+        **options: Any,
+    ):
+        """Stream a response with automatic tool execution.
+
+        Tool calls are executed first (non-streaming), then the final
+        response is streamed back.
+
+        Args:
+            message: User message
+            system_prompt: Optional system prompt
+            **options: Additional Ollama options
+
+        Yields:
+            String chunks of the response
+
+        Example:
+            >>> for chunk in client.chat_stream("Help me debug Python"):
+            ...     print(chunk, end="", flush=True)
+        """
+        messages = []
+
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        elif self.use_tools:
+            messages.append({
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant with access to AI skills. "
+                    "Use the available tools to find and apply relevant skills "
+                    "when the user asks for help with technical tasks."
+                ),
+            })
+
+        messages.append({"role": "user", "content": message})
+
+        yield from self.chat_stream_with_messages(messages, **options)
+
+    def chat_stream_with_messages(
+        self,
+        messages: list[dict[str, Any]],
+        **options: Any,
+    ):
+        """Stream messages with automatic tool execution loop.
+
+        Tool calls are handled non-streaming, then final response streams.
+
+        Args:
+            messages: List of message dictionaries
+            **options: Additional Ollama options
+
+        Yields:
+            String chunks of the response
+        """
+        tools = self.get_tools() if self.use_tools else None
+
+        # First, handle any tool calls (non-streaming)
+        response = self.client.chat(
+            model=self.model,
+            messages=messages,
+            tools=tools,
+            options=options if options else None,
+        )
+
+        rounds = 0
+        while (
+            self.use_tools
+            and response.get("message", {}).get("tool_calls")
+            and rounds < self.max_tool_rounds
+        ):
+            rounds += 1
+
+            messages.append(response["message"])
+            tool_results = self._process_tool_calls(
+                response["message"]["tool_calls"]
+            )
+            messages.extend(tool_results)
+
+            response = self.client.chat(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                options=options if options else None,
+            )
+
+        # Stream the final response
+        if not response.get("message", {}).get("tool_calls"):
+            stream = self.client.chat(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                options=options if options else None,
+                stream=True,
+            )
+
+            for chunk in stream:
+                content = chunk.get("message", {}).get("content", "")
+                if content:
+                    yield content
+        else:
+            # Fallback if still has tool calls
+            yield response.get("message", {}).get("content", "")
+
     def chat_with_skill(
         self,
         skill_query: str,

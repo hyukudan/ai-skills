@@ -343,6 +343,115 @@ class AnthropicSkills(BaseLLMIntegration):
 
         return "\n".join(text_parts)
 
+    def chat_stream(
+        self,
+        message: str,
+        system_prompt: str | None = None,
+        **kwargs: Any,
+    ):
+        """Stream a response with automatic tool execution.
+
+        Tool calls are executed first (non-streaming), then the final
+        response is streamed back.
+
+        Args:
+            message: User message
+            system_prompt: Optional system prompt
+            **kwargs: Additional arguments for messages API
+
+        Yields:
+            String chunks of the response
+
+        Example:
+            >>> for chunk in client.chat_stream("Help me debug Python"):
+            ...     print(chunk, end="", flush=True)
+        """
+        messages = [{"role": "user", "content": message}]
+
+        system = system_prompt or (
+            "You are a helpful assistant with access to AI skills. "
+            "Use the available tools to find and apply relevant skills "
+            "when the user asks for help with technical tasks."
+        )
+
+        yield from self.chat_stream_with_messages(messages, system=system, **kwargs)
+
+    def chat_stream_with_messages(
+        self,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        system: str | None = None,
+        **kwargs: Any,
+    ):
+        """Stream messages with automatic tool execution loop.
+
+        Tool calls are handled non-streaming, then final response streams.
+
+        Args:
+            messages: List of message dictionaries
+            model: Override default model
+            system: System prompt
+            **kwargs: Additional arguments for messages API
+
+        Yields:
+            String chunks of the response
+        """
+        model = model or self.model
+        tools = self.get_tools() if self.auto_execute else None
+
+        api_kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": kwargs.pop("max_tokens", self.max_tokens),
+        }
+
+        if system:
+            api_kwargs["system"] = system
+
+        if tools:
+            api_kwargs["tools"] = tools
+
+        api_kwargs.update(kwargs)
+
+        # First, handle any tool calls (non-streaming)
+        response = self.client.messages.create(**api_kwargs)
+
+        rounds = 0
+        while (
+            self.auto_execute
+            and response.stop_reason == "tool_use"
+            and rounds < self.max_tool_rounds
+        ):
+            rounds += 1
+
+            tool_uses = self._extract_tool_uses(response)
+            messages.append({
+                "role": "assistant",
+                "content": [block.model_dump() for block in response.content],
+            })
+            tool_results = self._process_tool_calls(tool_uses)
+            messages.append({
+                "role": "user",
+                "content": tool_results,
+            })
+
+            api_kwargs["messages"] = messages
+            response = self.client.messages.create(**api_kwargs)
+
+        # Stream the final response
+        if response.stop_reason != "tool_use":
+            api_kwargs["messages"] = messages
+            api_kwargs["stream"] = True
+
+            with self.client.messages.stream(**{k: v for k, v in api_kwargs.items() if k != "stream"}) as stream:
+                for text in stream.text_stream:
+                    yield text
+        else:
+            # Fallback if still has tool calls
+            for block in response.content:
+                if hasattr(block, "text"):
+                    yield block.text
+
     def get_completion_with_skills(
         self,
         messages: list[dict[str, Any]],

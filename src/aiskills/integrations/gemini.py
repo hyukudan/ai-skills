@@ -314,6 +314,42 @@ class GeminiSkills(BaseLLMIntegration):
             history=history or [],
         )
 
+    def chat_stream(
+        self,
+        message: str,
+        history: list[dict[str, str]] | None = None,
+    ):
+        """Stream a response with automatic function calling.
+
+        Function calls are handled automatically, then the final
+        response is streamed back.
+
+        Args:
+            message: User message
+            history: Optional conversation history
+
+        Yields:
+            String chunks of the response
+
+        Example:
+            >>> for chunk in client.chat_stream("Help me debug Python"):
+            ...     print(chunk, end="", flush=True)
+        """
+        model = self.get_model()
+
+        # Start chat with function calling enabled
+        chat = model.start_chat(
+            enable_automatic_function_calling=self.auto_function_calling,
+            history=history or [],
+        )
+
+        # Stream the response
+        response = chat.send_message(message, stream=True)
+
+        for chunk in response:
+            if chunk.text:
+                yield chunk.text
+
 
 def get_gemini_tools() -> list[Callable]:
     """Get skill tools as Python functions for Gemini.

@@ -322,6 +322,115 @@ class OpenAISkills(BaseLLMIntegration):
 
         return response.choices[0].message.content or ""
 
+    def chat_stream(
+        self,
+        message: str,
+        system_prompt: str | None = None,
+        **kwargs: Any,
+    ):
+        """Stream a response with automatic tool execution.
+
+        Tool calls are executed first (non-streaming), then the final
+        response is streamed back.
+
+        Args:
+            message: User message
+            system_prompt: Optional system prompt
+            **kwargs: Additional arguments for chat completions
+
+        Yields:
+            String chunks of the response
+
+        Example:
+            >>> for chunk in client.chat_stream("Help me debug Python"):
+            ...     print(chunk, end="", flush=True)
+        """
+        messages = []
+
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        else:
+            messages.append({
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant with access to AI skills. "
+                    "Use the available tools to find and apply relevant skills "
+                    "when the user asks for help with technical tasks."
+                ),
+            })
+
+        messages.append({"role": "user", "content": message})
+
+        yield from self.chat_stream_with_messages(messages, **kwargs)
+
+    def chat_stream_with_messages(
+        self,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        **kwargs: Any,
+    ):
+        """Stream messages with automatic tool execution loop.
+
+        Tool calls are handled non-streaming, then final response streams.
+
+        Args:
+            messages: List of message dictionaries
+            model: Override default model
+            **kwargs: Additional arguments for chat completions
+
+        Yields:
+            String chunks of the response
+        """
+        model = model or self.model
+        tools = self.get_tools() if self.auto_execute else None
+
+        # First, handle any tool calls (non-streaming)
+        response = self.client.chat.completions.create(
+            model=model,
+            messages=messages,
+            tools=tools,
+            **kwargs,
+        )
+
+        rounds = 0
+        while (
+            self.auto_execute
+            and response.choices[0].message.tool_calls
+            and rounds < self.max_tool_rounds
+        ):
+            rounds += 1
+
+            messages.append(response.choices[0].message.model_dump())
+            tool_results = self._process_tool_calls(
+                response.choices[0].message.tool_calls
+            )
+            messages.extend(tool_results)
+
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=tools,
+                **kwargs,
+            )
+
+        # If no more tool calls, stream the final response
+        if not response.choices[0].message.tool_calls:
+            # Re-request with streaming for final response
+            stream = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=tools,
+                stream=True,
+                **kwargs,
+            )
+
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+        else:
+            # Fallback if still has tool calls
+            yield response.choices[0].message.content or ""
+
     def get_completion_with_skills(
         self,
         messages: list[dict[str, Any]],
