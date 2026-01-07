@@ -250,6 +250,30 @@ Features:
 
 📖 [Full Guide](docs/includes.md)
 
+### Multi-LLM Testing
+
+Ai Skills includes comprehensive **acceptance tests** to validate consistent behavior across providers:
+
+```bash
+# Run all multi-LLM acceptance tests
+pytest tests/integration/test_multi_llm.py -v
+
+# Test specific providers
+pytest tests/integration/test_multi_llm.py::TestClaudeMCPIntegration -v
+pytest tests/integration/test_multi_llm.py::TestOpenAIFunctionCalling -v
+pytest tests/integration/test_multi_llm.py::TestGeminiFunctionCalling -v
+pytest tests/integration/test_multi_llm.py::TestOllamaLocalIntegration -v
+```
+
+Cross-provider tests ensure:
+- All providers list the same skills
+- Content is identical across providers
+- Template variables render consistently
+- Error handling is uniform
+- No provider-specific bias in skill behavior
+
+📖 [Full Guide](docs/testing/multi-llm.md)
+
 ### API Reference
 
 | Phase | Endpoint | Description |
