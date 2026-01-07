@@ -81,6 +81,10 @@ app.add_typer(mcp_cmd.app, name="mcp", help="MCP server commands")
 from .commands import api as api_cmd
 app.add_typer(api_cmd.app, name="api", help="REST API server commands")
 
+# LLM integration test commands
+from .commands import integrations as integrations_cmd
+app.add_typer(integrations_cmd.app, name="llm", help="Test LLM integrations")
+
 
 # Quick aliases for common operations
 @app.command(name="ls")
