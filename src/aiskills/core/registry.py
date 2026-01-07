@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from ..embeddings.base import EmbeddingProvider
     from ..vector_stores.base import VectorStoreProvider
 
+from ..search.bm25 import BM25Index
+
 
 class SkillRegistry:
     """Registry for indexing and searching skills.
@@ -32,6 +34,7 @@ class SkillRegistry:
         self._embedding_provider = embedding_provider
         self._vector_store = vector_store
         self._index: dict[str, SkillIndex] = {}
+        self._bm25_index = BM25Index()  # BM25 index for hybrid search
         self._initialized = False
 
     def _load_index_from_store(self) -> None:
@@ -97,10 +100,18 @@ class SkillRegistry:
         self._initialized = True
 
     def _get_embedding_provider(self) -> EmbeddingProvider:
-        """Lazy load embedding provider."""
+        """Lazy load embedding provider with caching."""
         if self._embedding_provider is None:
+            from ..embeddings.cache import CachedEmbeddingProvider, get_global_cache
             from ..embeddings.fastembed import get_fastembed_provider
-            self._embedding_provider = get_fastembed_provider()
+
+            # Get cache directory from paths
+            cache_dir = self.paths.get_registry_dir() / "cache"
+
+            # Create cached provider wrapping the base provider
+            base_provider = get_fastembed_provider()
+            cache = get_global_cache(cache_dir)
+            self._embedding_provider = CachedEmbeddingProvider(base_provider, cache)
         return self._embedding_provider
 
     def _get_vector_store(self) -> VectorStoreProvider:
@@ -163,6 +174,9 @@ class SkillRegistry:
             metadatas=[metadata],
         )
 
+        # Add to BM25 index for hybrid search
+        self._bm25_index.add(skill.id, search_text)
+
         # Update local index
         index = skill.to_index()
         index.embedding_id = skill.id
@@ -184,6 +198,8 @@ class SkillRegistry:
         if index.embedding_id:
             store = self._get_vector_store()
             store.delete([index.embedding_id])
+            # Also remove from BM25 index
+            self._bm25_index.remove(index.embedding_id)
 
         del self._index[name]
         return True
@@ -312,6 +328,113 @@ class SkillRegistry:
         matches.sort(key=lambda x: x[1], reverse=True)
         return [m[0] for m in matches[:limit]]
 
+    def search_hybrid(
+        self,
+        query: str,
+        limit: int = 10,
+        tags: list[str] | None = None,
+        category: str | None = None,
+        min_score: float = 0.0,
+        semantic_weight: float = 0.6,
+        text_weight: float = 0.4,
+    ) -> list[tuple[SkillIndex, float]]:
+        """Hybrid search combining semantic and BM25 text search.
+
+        Uses Reciprocal Rank Fusion (RRF) to combine results from both methods.
+
+        Args:
+            query: Search query
+            limit: Maximum results
+            tags: Filter by tags (any match)
+            category: Filter by category
+            min_score: Minimum combined score (0-1)
+            semantic_weight: Weight for semantic results (0-1)
+            text_weight: Weight for BM25 results (0-1)
+
+        Returns:
+            List of (SkillIndex, score) tuples sorted by relevance
+        """
+        # RRF constant (higher = smoother blending)
+        rrf_k = 60
+
+        # Get more results for fusion
+        fetch_limit = min(limit * 3, 100)
+
+        # 1. Semantic search
+        semantic_results = self.search(
+            query=query,
+            limit=fetch_limit,
+            tags=tags,
+            category=category,
+            min_score=0.0,  # Don't filter yet
+        )
+
+        # 2. BM25 text search
+        bm25_results = self._bm25_index.search(query, limit=fetch_limit)
+
+        # Build rank maps
+        semantic_ranks: dict[str, int] = {}
+        semantic_scores: dict[str, float] = {}
+        for rank, (index, score) in enumerate(semantic_results):
+            if index.embedding_id:
+                semantic_ranks[index.embedding_id] = rank
+                semantic_scores[index.embedding_id] = score
+
+        text_ranks: dict[str, int] = {}
+        text_scores: dict[str, float] = {}
+        if bm25_results:
+            max_bm25 = max(score for _, score in bm25_results)
+            max_bm25 = max(max_bm25, 0.001)
+            for rank, (doc_id, score) in enumerate(bm25_results):
+                text_ranks[doc_id] = rank
+                text_scores[doc_id] = score / max_bm25
+
+        # Combine all document IDs
+        all_ids = set(semantic_ranks.keys()) | set(text_ranks.keys())
+
+        # Calculate RRF scores
+        rrf_scores: list[tuple[str, float]] = []
+
+        for doc_id in all_ids:
+            # RRF formula: 1 / (k + rank)
+            semantic_rrf = 0.0
+            if doc_id in semantic_ranks:
+                semantic_rrf = 1 / (rrf_k + semantic_ranks[doc_id])
+
+            text_rrf = 0.0
+            if doc_id in text_ranks:
+                text_rrf = 1 / (rrf_k + text_ranks[doc_id])
+
+            # Weighted combination
+            combined = semantic_weight * semantic_rrf + text_weight * text_rrf
+            rrf_scores.append((doc_id, combined))
+
+        # Sort by combined score
+        rrf_scores.sort(key=lambda x: x[1], reverse=True)
+
+        # Normalize to 0-1
+        max_combined = rrf_scores[0][1] if rrf_scores else 1.0
+        max_combined = max(max_combined, 0.001)
+
+        # Build final results with SkillIndex
+        matches: list[tuple[SkillIndex, float]] = []
+
+        # Create ID to SkillIndex mapping
+        id_to_index: dict[str, SkillIndex] = {}
+        for index in self._index.values():
+            if index.embedding_id:
+                id_to_index[index.embedding_id] = index
+
+        for doc_id, combined in rrf_scores[:limit]:
+            normalized = combined / max_combined
+            if normalized < min_score:
+                continue
+
+            if doc_id in id_to_index:
+                matches.append((id_to_index[doc_id], normalized))
+
+        return matches
+
     def list_all(self) -> list[SkillIndex]:
         """List all indexed skills."""
         self._load_index_from_store()
@@ -335,6 +458,7 @@ class SkillRegistry:
         store = self._get_vector_store()
         store.clear()
         self._index.clear()
+        self._bm25_index.clear()  # Also clear BM25 index
 
         # Re-add all
         for skill in skills:

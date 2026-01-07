@@ -20,6 +20,10 @@ class SkillSearchInput(BaseModel):
         default=False,
         description="Use text search instead of semantic search (faster, no ML)",
     )
+    hybrid: bool = Field(
+        default=False,
+        description="Use hybrid search combining semantic + BM25 for best accuracy",
+    )
 
 
 class SkillReadInput(BaseModel):
@@ -98,9 +102,10 @@ TOOL_DEFINITIONS = [
     {
         "name": "skill_search",
         "description": (
-            "Search for AI skills by semantic similarity or text matching. "
+            "Search for AI skills by semantic similarity, text matching, or hybrid. "
             "Use this to find relevant skills for a given task or topic. "
-            "Semantic search understands meaning, while text search matches exact keywords."
+            "Semantic search understands meaning, text search matches keywords, "
+            "and hybrid combines both for best accuracy."
         ),
         "inputSchema": SkillSearchInput.model_json_schema(),
     },
