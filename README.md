@@ -339,11 +339,13 @@ pip install jupyter         # For notebooks
 |----------|-------------|
 | [**Examples README**](examples/README.md) | Setup guide, code samples, troubleshooting |
 | [**Provider Comparison**](docs/provider-comparison.md) | Feature matrix, costs, when to use each |
+| [**Troubleshooting Guide**](docs/troubleshooting.md) | Common issues and solutions |
 | [**OpenAI Notebook**](examples/notebooks/openai_quickstart.ipynb) | GPT-4 with function calling |
 | [**Anthropic Notebook**](examples/notebooks/anthropic_claude.ipynb) | Claude 3.5 with tool use |
 | [**Gemini Notebook**](examples/notebooks/gemini_colab.ipynb) | Gemini with auto function calling |
 | [**Ollama Notebook**](examples/notebooks/ollama_local.ipynb) | Local llama3.1 with tools |
 | [**Multi-Provider Script**](examples/multi_provider.py) | Fallback chains, parallel queries |
+| [**Async Usage**](examples/async_usage.py) | Async/await and concurrent requests |
 
 **Quick example:**
 ```python

@@ -307,4 +307,6 @@ def smart_query(question, task_type="code"):
 
 - [Examples README](../examples/README.md) - Code examples
 - [SDK Integration Guide](sdk.md) - Detailed SDK documentation
+- [Troubleshooting Guide](troubleshooting.md) - Common issues and solutions
 - [Multi-Provider Example](../examples/multi_provider.py) - Full implementation
+- [Async Usage Example](../examples/async_usage.py) - Async patterns

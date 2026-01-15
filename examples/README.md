@@ -33,6 +33,7 @@ Located in `notebooks/`:
 | Script | Description |
 |--------|-------------|
 | [`multi_provider.py`](multi_provider.py) | Multi-provider orchestration patterns |
+| [`async_usage.py`](async_usage.py) | Async/await patterns and concurrent requests |
 
 ### Example Skills
 
@@ -259,3 +260,4 @@ The SDK includes retry logic with exponential backoff. For heavy usage, consider
 - [Main README](../README.md) - Project overview
 - [SDK Integration Guide](../docs/sdk.md) - Detailed SDK documentation
 - [Provider Comparison](../docs/provider-comparison.md) - Detailed comparison
+- [Troubleshooting Guide](../docs/troubleshooting.md) - Common issues and solutions
