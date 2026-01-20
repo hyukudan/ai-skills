@@ -23,38 +23,34 @@
 
 ## 🚀 Quick Start
 
-Get started in seconds.
+### For Claude Code (Recommended)
 
-### 1. Install
+One command to install everything and configure MCP:
+
+```bash
+git clone https://github.com/hyukudan/ai-skills.git
+cd ai-skills
+./scripts/setup-claude.sh
+```
+
+Restart Claude Code, then verify with `/mcp` and try:
+- "what are best practices for API design?"
+- "list available skills"
+
+### For CLI / Other LLMs
+
 ```bash
 pip install aiskills[all]
-```
-*(Recommended: Use a virtual environment or `uv tool install aiskills`)*
 
-### 2. Initialize
-Create your first skill library:
-```bash
-aiskills init my-first-skill
-```
-
-### 3. Search
-Find skills semantically:
-```bash
+# Search skills semantically
 aiskills search "how to debug python"
-# Returns specific debugging skills based on semantic meaning
-```
 
-### 4. Use Skills Naturally
-Invoke skills with natural language:
-```bash
+# Use a skill
 aiskills use "debug python memory leak"
-# Finds and displays the best matching skill automatically
-```
 
-### 5. Serve (Optional)
-Start the API/MCP server to connect with apps:
-```bash
-aiskills api serve
+# Start MCP/API server
+aiskills mcp serve    # For Claude Desktop
+aiskills api serve    # REST API for any LLM
 ```
 
 ## 💡 Core Concepts
@@ -173,34 +169,6 @@ response = client.chat("Explain async patterns")
 | **Local LLMs (Ollama)** | `create_ollama_client()` | ✅ | - | [Guide](docs/integrations/ollama.md) |
 | **Claude Desktop** | - | - | MCP Server | [Guide](docs/integrations/claude_desktop.md) |
 | **Claude Code** | - | - | Plugin + MCP | [Guide](plugin/README.md) |
-
-### Claude Code Quick Start
-
-**Option A: One-command setup (from source)**
-```bash
-git clone https://github.com/hyukudan/ai-skills.git
-cd ai-skills
-./scripts/setup-claude.sh
-```
-
-This automatically creates a virtualenv, installs dependencies, installs all skills, and configures Claude Code.
-
-**Option B: Manual setup (pip install)**
-```bash
-# 1. Install aiskills
-pip install aiskills[all]
-
-# 2. Add MCP server to Claude Code
-claude mcp add aiskills -- aiskills mcp serve
-
-# 3. Restart Claude Code and verify
-/mcp  # Should show: aiskills (connected)
-```
-
-Then ask Claude Code things like:
-- "what are best practices for API design?"
-- "list available skills"
-- "show me the testing-patterns skill"
 
 ### Token Optimization (MCP)
 
