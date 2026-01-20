@@ -13,6 +13,7 @@ from rich.table import Table
 
 from ..core.loader import get_loader
 from ..core.manager import SkillManager, get_manager
+from ..core.registry import get_registry
 from ..sources.base import FetchError
 from ..sources.resolver import SourceResolver, get_source_resolver
 from ..storage.lockfile import LockFileManager
@@ -177,6 +178,16 @@ def install(
         except Exception as e:
             console.print(f"  [red]✗[/red] Failed: {e}")
             errors += 1
+
+    # Rebuild search index if any skills were installed
+    if installed + updated > 0:
+        try:
+            registry = get_registry()
+            count = registry.sync_from_manager(manager)
+            console.print(f"\n  [green]✓[/green] Search index updated ({count} skills)")
+        except Exception:
+            # Silently skip if search extras not installed
+            pass
 
     # Summary
     console.print()
