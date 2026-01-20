@@ -192,7 +192,7 @@ aiskills llm list-models
 
 ## 📦 Bundled Skills
 
-Ai Skills ships with **23 ready-to-use marketing and growth skills** covering the full marketing stack. Install them globally to make them available across all your projects:
+Ai Skills ships with **50+ ready-to-use skills**: 23 marketing/growth skills and 31 development skills. Install them globally to make them available across all your projects:
 
 ```bash
 # Install all bundled skills
@@ -292,19 +292,141 @@ aiskills use "create a referral program for my app"
 ```
 </details>
 
-### Development Skills
+### Development Skills Library
 
-The examples also include **30+ development skills** for coding, architecture, and DevOps:
+<details>
+<summary><b>🏗️ Backend & Architecture (8 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `api-design` | Design RESTful and GraphQL APIs. Versioning, error handling, pagination, authentication patterns. |
+| `architecture-patterns` | Software architecture patterns. Microservices, monoliths, event-driven, hexagonal architecture. |
+| `async-concurrency` | Async programming patterns. Event loops, coroutines, parallel execution, race conditions. |
+| `caching-strategies` | Implement caching effectively. Redis, in-memory, CDN, cache invalidation strategies. |
+| `database-design` | Database schema design. Normalization, indexing, relationships, migrations. |
+| `database-optimization` | Database performance. Cursor pagination, N+1 queries, connection pooling, slow query diagnosis. |
+| `error-handling` | Robust error handling patterns. Exceptions, retries, circuit breakers, graceful degradation. |
+| `performance-optimization` | Application performance. Profiling, bottleneck identification, memory optimization. |
 
 ```bash
-# Some available dev skills
-aiskills use "debug a Python memory leak"
-aiskills use "design a REST API"
-aiskills use "set up CI/CD with GitHub Actions"
-aiskills use "implement authentication patterns"
+aiskills use "design a REST API with pagination"
 aiskills use "cursor pagination vs offset"
-aiskills use "optimize slow database queries"
+aiskills use "fix N+1 query problem"
 ```
+</details>
+
+<details>
+<summary><b>🧪 Testing & Quality (3 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `testing-strategies` | Testing approaches. Unit, integration, e2e testing, TDD, coverage strategies. |
+| `testing-patterns` | Advanced testing patterns. Mocking, fixtures, parameterized tests, test isolation. |
+| `code-review` | Effective code reviews. Review checklists, feedback patterns, automated checks. |
+
+```bash
+aiskills use "write unit tests for async code"
+aiskills use "set up pytest fixtures"
+aiskills use "code review best practices"
+```
+</details>
+
+<details>
+<summary><b>🚀 DevOps & Infrastructure (5 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `ci-cd-pipelines` | CI/CD setup. GitHub Actions, GitLab CI, Jenkins, deployment automation. |
+| `docker-deployment` | Docker for production. Multi-stage builds, compose, health checks, optimization. |
+| `docker-kubernetes` | Kubernetes orchestration. Deployments, services, ingress, helm charts. |
+| `logging-observability` | Observability stack. Structured logging, metrics, tracing, alerting. |
+| `incident-response` | Handle production incidents. Runbooks, postmortems, on-call practices. |
+
+```bash
+aiskills use "set up GitHub Actions CI/CD"
+aiskills use "dockerize a Python application"
+aiskills use "kubernetes deployment patterns"
+```
+</details>
+
+<details>
+<summary><b>🔒 Security (3 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `authentication-patterns` | Auth implementation. JWT, OAuth, sessions, MFA, password hashing. |
+| `security-best-practices` | Application security. OWASP top 10, input validation, secure defaults. |
+| `security-hardening` | Production hardening. Headers, CSP, rate limiting, secrets management. |
+
+```bash
+aiskills use "implement JWT authentication"
+aiskills use "prevent SQL injection"
+aiskills use "secure API endpoints"
+```
+</details>
+
+<details>
+<summary><b>🐛 Debugging & Refactoring (3 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `python-debugging` | Debug Python applications. Memory leaks, profiling, tracemalloc, pdb. |
+| `error-diagnosis` | Systematic error diagnosis. Log analysis, reproduction, root cause analysis. |
+| `refactoring-patterns` | Code refactoring. Extract method, rename, move, safe refactoring techniques. |
+
+```bash
+aiskills use "debug Python memory leak"
+aiskills use "diagnose production error"
+aiskills use "refactor legacy code safely"
+```
+</details>
+
+<details>
+<summary><b>🔀 Git & Workflow (3 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `git-workflow` | Git workflows. Feature branches, trunk-based, GitFlow, merge strategies. |
+| `git-workflows` | Advanced git operations. Rebasing, cherry-picking, bisect, recovery. |
+| `dependency-management` | Manage dependencies. Lock files, version pinning, security updates, monorepos. |
+
+```bash
+aiskills use "resolve git merge conflict"
+aiskills use "set up monorepo with workspaces"
+aiskills use "git rebase workflow"
+```
+</details>
+
+<details>
+<summary><b>🤖 AI & LLM (4 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `llm-integration` | Integrate LLMs in applications. API usage, prompt management, streaming, costs. |
+| `prompt-engineering` | Effective prompts. System prompts, few-shot, chain-of-thought, structured output. |
+| `aiskills-guide` | Using AI Skills system. Creating skills, search, CLI usage, MCP integration. |
+| `skill-creator` | Create new AI Skills. Frontmatter format, best practices, testing skills. |
+
+```bash
+aiskills use "integrate OpenAI API"
+aiskills use "write effective system prompts"
+aiskills use "create a new skill"
+```
+</details>
+
+<details>
+<summary><b>📝 Frontend & Docs (2 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `frontend-design` | Frontend architecture. Component design, state management, performance. |
+| `documentation-writing` | Technical documentation. API docs, READMEs, architecture decision records. |
+
+```bash
+aiskills use "structure React components"
+aiskills use "write API documentation"
+```
+</details>
 
 ## 📖 Skill Format
 
