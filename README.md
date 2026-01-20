@@ -11,7 +11,7 @@
 
 
 **Universal AI Knowledge for Everyone**
-*Write skills once. Use them with Claude, ChatGPT, Gemini, and local LLMs.*
+*Write skills once, use them everywhere.*
 
 [Quick Start](#-quick-start) • [Core Concepts](#-core-concepts) • [Integrations](#-integrations) • [Architecture](#-architecture) • [Documentation](#-documentation) • [Examples](#examples--notebooks)
 
