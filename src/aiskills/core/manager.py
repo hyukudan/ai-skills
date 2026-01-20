@@ -27,6 +27,9 @@ class SkillManager:
     - Cache management
     """
 
+    # LRU cache size for skill lookups
+    _SKILL_CACHE_SIZE = 50
+
     def __init__(
         self,
         config: AppConfig | None = None,
@@ -42,6 +45,8 @@ class SkillManager:
         self.renderer = renderer or get_renderer()
         self._lock_managers: dict[str, LockFileManager] = {}
         self._resolver = None  # Lazy loaded to avoid circular import
+        self._skill_cache: dict[str, Skill] = {}  # LRU cache for get()
+        self._skill_cache_order: list[str] = []  # Track insertion order for LRU
 
     def _get_lock_manager(self, global_install: bool = False) -> LockFileManager:
         """Get or create lock manager for scope."""
@@ -56,10 +61,36 @@ class SkillManager:
     # Reading Skills
     # ─────────────────────────────────────────────────────────────────
 
+    def _cache_skill(self, name: str, skill: Skill) -> None:
+        """Add skill to LRU cache, evicting oldest if full."""
+        if name in self._skill_cache:
+            # Move to end (most recently used)
+            self._skill_cache_order.remove(name)
+            self._skill_cache_order.append(name)
+            return
+
+        # Evict oldest if cache is full
+        while len(self._skill_cache) >= self._SKILL_CACHE_SIZE:
+            oldest = self._skill_cache_order.pop(0)
+            del self._skill_cache[oldest]
+
+        self._skill_cache[name] = skill
+        self._skill_cache_order.append(name)
+
+    def _invalidate_skill_cache(self, name: str | None = None) -> None:
+        """Invalidate skill cache entry or entire cache."""
+        if name is None:
+            self._skill_cache.clear()
+            self._skill_cache_order.clear()
+        elif name in self._skill_cache:
+            del self._skill_cache[name]
+            self._skill_cache_order.remove(name)
+
     def get(self, name: str) -> Skill | None:
         """Get a skill by name.
 
         Searches in priority order: project > global.
+        Uses LRU cache to avoid repeated disk reads.
 
         Args:
             name: Skill name
@@ -67,12 +98,57 @@ class SkillManager:
         Returns:
             Skill if found, None otherwise
         """
+        # Check cache first
+        if name in self._skill_cache:
+            # Move to end (most recently used)
+            self._skill_cache_order.remove(name)
+            self._skill_cache_order.append(name)
+            return self._skill_cache[name]
+
         result = self.paths.find_skill(name)
         if result is None:
             return None
 
         path, source, location_type = result
-        return self.loader.load(path, source=source, location_type=location_type)
+        skill = self.loader.load(path, source=source, location_type=location_type)
+
+        # Cache the loaded skill
+        self._cache_skill(name, skill)
+        return skill
+
+    def _iter_skills(
+        self,
+        include_global: bool = True,
+        include_project: bool = True,
+    ):
+        """Internal generator for iterating over installed skills.
+
+        Yields:
+            Tuple of (skill, is_global) for each unique skill
+        """
+        seen_names: set[str] = set()
+
+        for skills_dir, location_type in self.paths.get_search_dirs():
+            is_global = str(skills_dir).startswith(str(self.paths.global_base))
+
+            if not include_global and is_global:
+                continue
+            if not include_project and not is_global:
+                continue
+
+            for skill_dir in self.loader.list_skill_dirs(skills_dir):
+                try:
+                    skill = self.loader.load(
+                        skill_dir,
+                        source="global" if is_global else "project",
+                        location_type=location_type,
+                    )
+
+                    if skill.manifest.name not in seen_names:
+                        seen_names.add(skill.manifest.name)
+                        yield skill
+                except Exception:
+                    continue
 
     def list_installed(
         self,
@@ -88,35 +164,10 @@ class SkillManager:
         Returns:
             List of installed skills
         """
-        skills: list[Skill] = []
-        seen_names: set[str] = set()
-
-        for skills_dir, location_type in self.paths.get_search_dirs():
-            is_global = str(skills_dir).startswith(str(self.paths.global_base))
-
-            if global_only and not is_global:
-                continue
-            if project_only and is_global:
-                continue
-
-            for skill_dir in self.loader.list_skill_dirs(skills_dir):
-                try:
-                    skill = self.loader.load(
-                        skill_dir,
-                        source="global" if is_global else "project",
-                        location_type=location_type,
-                    )
-
-                    # Skip duplicates (first one wins due to priority order)
-                    if skill.manifest.name in seen_names:
-                        continue
-                    seen_names.add(skill.manifest.name)
-                    skills.append(skill)
-
-                except Exception:
-                    continue
-
-        return skills
+        return list(self._iter_skills(
+            include_global=not project_only,
+            include_project=not global_only,
+        ))
 
     def read(
         self,
@@ -213,32 +264,10 @@ class SkillManager:
         Returns:
             List of skill indices
         """
-        skills: list[SkillIndex] = []
-        seen_names: set[str] = set()
-
-        for skills_dir, location_type in self.paths.get_search_dirs():
-            is_global = str(skills_dir).startswith(str(self.paths.global_base))
-
-            if is_global and not include_global:
-                continue
-            if not is_global and not include_project:
-                continue
-
-            for skill_dir in self.loader.list_skill_dirs(skills_dir):
-                try:
-                    skill = self.loader.load(
-                        skill_dir,
-                        source="global" if is_global else "project",
-                        location_type=location_type,
-                    )
-
-                    if skill.manifest.name not in seen_names:
-                        seen_names.add(skill.manifest.name)
-                        skills.append(skill.to_index())
-
-                except Exception:
-                    continue
-
+        skills = [
+            skill.to_index()
+            for skill in self._iter_skills(include_global, include_project)
+        ]
         return sorted(skills, key=lambda s: s.name)
 
     # ─────────────────────────────────────────────────────────────────
@@ -297,6 +326,9 @@ class SkillManager:
             source="global" if global_install else "project",
             location_type=".aiskills",
         )
+
+        # Invalidate cache for this skill
+        self._invalidate_skill_cache(skill.manifest.name)
 
         # Update lock file
         lock = self._get_lock_manager(global_install)
@@ -374,6 +406,9 @@ class SkillManager:
 
         # Remove directory
         shutil.rmtree(path)
+
+        # Invalidate cache
+        self._invalidate_skill_cache(name)
 
         # Update lock file
         is_global = source == "global"

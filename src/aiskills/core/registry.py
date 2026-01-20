@@ -36,6 +36,7 @@ class SkillRegistry:
         self._index: dict[str, SkillIndex] = {}
         self._bm25_index = BM25Index()  # BM25 index for hybrid search
         self._initialized = False
+        self._id_to_index_cache: dict[str, SkillIndex] | None = None  # Cache for hybrid search
 
     def _load_index_from_store(self) -> None:
         """Load the in-memory index from the vector store."""
@@ -122,6 +123,20 @@ class SkillRegistry:
             self._vector_store = get_chroma_store(registry_dir / "vectors")
         return self._vector_store
 
+    def _get_id_to_index(self) -> dict[str, SkillIndex]:
+        """Get cached id-to-index mapping for fast lookups."""
+        if self._id_to_index_cache is None:
+            self._id_to_index_cache = {
+                idx.embedding_id: idx
+                for idx in self._index.values()
+                if idx.embedding_id
+            }
+        return self._id_to_index_cache
+
+    def _invalidate_id_cache(self) -> None:
+        """Invalidate the id-to-index cache."""
+        self._id_to_index_cache = None
+
     def _build_search_text(self, skill: Skill) -> str:
         """Build text for embedding from skill metadata."""
         parts = [
@@ -177,10 +192,11 @@ class SkillRegistry:
         # Add to BM25 index for hybrid search
         self._bm25_index.add(skill.id, search_text)
 
-        # Update local index
+        # Update local index and invalidate cache
         index = skill.to_index()
         index.embedding_id = skill.id
         self._index[skill.manifest.name] = index
+        self._invalidate_id_cache()
 
     def remove(self, name: str) -> bool:
         """Remove a skill from the registry.
@@ -202,6 +218,7 @@ class SkillRegistry:
             self._bm25_index.remove(index.embedding_id)
 
         del self._index[name]
+        self._invalidate_id_cache()
         return True
 
     def search(
@@ -419,11 +436,8 @@ class SkillRegistry:
         # Build final results with SkillIndex
         matches: list[tuple[SkillIndex, float]] = []
 
-        # Create ID to SkillIndex mapping
-        id_to_index: dict[str, SkillIndex] = {}
-        for index in self._index.values():
-            if index.embedding_id:
-                id_to_index[index.embedding_id] = index
+        # Use cached ID to SkillIndex mapping
+        id_to_index = self._get_id_to_index()
 
         for doc_id, combined in rrf_scores[:limit]:
             normalized = combined / max_combined
@@ -459,6 +473,7 @@ class SkillRegistry:
         store.clear()
         self._index.clear()
         self._bm25_index.clear()  # Also clear BM25 index
+        self._invalidate_id_cache()
 
         # Re-add all
         for skill in skills:
