@@ -23,21 +23,35 @@
 
 ## 🚀 Quick Start
 
-### For Claude Code (Recommended)
+### Universal Setup (Claude, Gemini, Codex)
 
-One command to install everything and configure MCP:
+One script to configure AI Skills for any supported CLI:
 
 ```bash
 git clone https://github.com/hyukudan/ai-skills.git
 cd ai-skills
-./scripts/setup-claude.sh
+./scripts/setup.sh
 ```
 
-Restart Claude Code, then verify with `/mcp` and try:
-- "what are best practices for API design?"
-- "list available skills"
+The script will:
+1. Detect installed CLIs (Claude Code, Gemini CLI, Codex CLI)
+2. Let you choose which to configure
+3. Install skills and build the search index
+4. Configure MCP servers automatically
 
-### For CLI / Other LLMs
+**Or specify CLIs directly:**
+```bash
+./scripts/setup.sh --claude           # Claude Code only
+./scripts/setup.sh --gemini           # Gemini CLI only
+./scripts/setup.sh --all              # All installed CLIs
+```
+
+Restart your CLI, then try:
+- **Claude Code:** `/mcp` to verify, then "best practices for API design?"
+- **Gemini CLI:** `@aiskills list skills` or "help me debug python"
+- **Codex CLI:** `@aiskills search testing` or "help me write tests"
+
+### Manual / Other LLMs
 
 ```bash
 pip install aiskills[all]
@@ -48,8 +62,8 @@ aiskills search "how to debug python"
 # Use a skill
 aiskills use "debug python memory leak"
 
-# Start MCP/API server
-aiskills mcp serve    # For Claude Desktop
+# Start servers
+aiskills mcp serve    # MCP for Claude/Gemini/Codex
 aiskills api serve    # REST API for any LLM
 ```
 
