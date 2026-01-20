@@ -11,7 +11,7 @@
 
 
 **Universal AI Knowledge for Everyone**
-*Write skills once. Use them with Claude, ChatGPT, Gemini, and Ollama.*
+*Write skills once. Use them with Claude, ChatGPT, Gemini, and local LLMs.*
 
 [Quick Start](#-quick-start) • [Core Concepts](#-core-concepts) • [Integrations](#-integrations) • [Architecture](#-architecture) • [Documentation](#-documentation) • [Examples](#examples--notebooks)
 
@@ -170,7 +170,7 @@ response = client.chat("Explain async patterns")
 | **OpenAI / ChatGPT** | `create_openai_client()` | ✅ | - | [Guide](docs/integrations/chatgpt.md) |
 | **Anthropic Claude** | `create_anthropic_client()` | ✅ | - | [Guide](docs/integrations/anthropic.md) |
 | **Google Gemini** | `create_gemini_client()` | ✅ | - | [Guide](docs/integrations/gemini.md) |
-| **Ollama / Local** | `create_ollama_client()` | ✅ | - | [Guide](docs/integrations/ollama.md) |
+| **Local LLMs (Ollama)** | `create_ollama_client()` | ✅ | - | [Guide](docs/integrations/ollama.md) |
 | **Claude Desktop** | - | - | MCP Server | [Guide](docs/integrations/claude_desktop.md) |
 | **Claude Code** | - | - | Plugin + MCP | [Guide](plugin/README.md) |
 

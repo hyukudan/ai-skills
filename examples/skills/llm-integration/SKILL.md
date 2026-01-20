@@ -7,6 +7,9 @@ tags:
   - integration
   - api
   - ollama
+  - vllm
+  - lmstudio
+  - local-llm
   - openai
   - anthropic
   - gemini

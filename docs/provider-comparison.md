@@ -1,6 +1,6 @@
 # LLM Provider Comparison
 
-This guide compares the four LLM providers supported by AI Skills: OpenAI, Anthropic, Google Gemini, and Ollama.
+This guide compares the four LLM providers supported by AI Skills: OpenAI, Anthropic, Google Gemini, and local LLMs (via Ollama).
 
 ## Feature Matrix
 
@@ -117,9 +117,11 @@ client = create_gemini_client(
 
 ---
 
-### Ollama (Local)
+### Local LLMs (Ollama, vLLM, LM Studio)
 
 **Best for:** Privacy, offline use, no API costs
+
+> **Note:** The current integration uses Ollama's API. vLLM and LM Studio can expose OpenAI-compatible endpoints, allowing you to use `create_openai_client()` with a custom `base_url`.
 
 ```python
 from aiskills.integrations import create_ollama_client

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**AI Skills** is a universal, LLM-agnostic skills management system that transforms markdown files into semantically searchable tools for any AI agent (Claude, ChatGPT, Gemini, Ollama). Skills are markdown files with YAML frontmatter that get indexed for semantic + text hybrid search.
+**AI Skills** is a universal, LLM-agnostic skills management system that transforms markdown files into semantically searchable tools for any AI agent (Claude, ChatGPT, Gemini, local LLMs like Ollama/vLLM). Skills are markdown files with YAML frontmatter that get indexed for semantic + text hybrid search.
 
 ## Common Commands
 
