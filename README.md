@@ -6,7 +6,7 @@
 
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-blue?style=flat-square)](https://python.org)
-[![Status](https://img.shields.io/badge/status-active-success?style=flat-square)](https://github.com/sergioc/ai-skills)
+[![Status](https://img.shields.io/badge/status-active-success?style=flat-square)](https://github.com/hyukudan/ai-skills)
 [![PyPI](https://img.shields.io/badge/pypi-v0.1.0-orange?style=flat-square)](https://pypi.org/project/aiskills)
 
 
@@ -302,6 +302,8 @@ aiskills use "debug a Python memory leak"
 aiskills use "design a REST API"
 aiskills use "set up CI/CD with GitHub Actions"
 aiskills use "implement authentication patterns"
+aiskills use "cursor pagination vs offset"
+aiskills use "optimize slow database queries"
 ```
 
 ## 📖 Skill Format
@@ -485,4 +487,4 @@ All endpoints support scoping context (`active_paths`, `languages`) for accurate
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## 📄 License
-AGPL-3.0 © [SergioC](https://github.com/sergioc)
+AGPL-3.0 © [hyukudan](https://github.com/hyukudan)

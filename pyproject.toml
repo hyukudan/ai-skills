@@ -79,8 +79,8 @@ aiskills-mcp = "aiskills.mcp.server:main"
 aiskills-api = "aiskills.api.server:main"
 
 [project.urls]
-Homepage = "https://github.com/sergioc/aiskills"
-Repository = "https://github.com/sergioc/aiskills"
+Homepage = "https://github.com/hyukudan/ai-skills"
+Repository = "https://github.com/hyukudan/ai-skills"
 
 [build-system]
 requires = ["hatchling"]

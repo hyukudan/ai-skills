@@ -91,4 +91,4 @@ User Message
 
 ---
 
-*This system is powered by [AI Skills](https://github.com/sergioc/ai-skills)*
+*This system is powered by [AI Skills](https://github.com/hyukudan/ai-skills)*
