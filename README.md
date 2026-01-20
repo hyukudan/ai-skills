@@ -88,12 +88,12 @@ Today's reality: Each platform has its own skills ecosystem
    Only Claude      Only Cursor      Only Codex      Only Gemini
 ```
 
-**The cost of fragmentation:**
-- 🔒 Your expertise is locked to one vendor
-- 📝 Want the same skill on Gemini? Rewrite it
-- 💸 Marketplaces take cuts and control distribution
+**The challenges:**
+- 🔒 Your expertise lives in one vendor's ecosystem
+- 📝 Want the same skill on Gemini? Export and adapt it
+- 🔍 Many skills? Hard to find the right one (no semantic search)
+- 🤷 Similar skills? Platform decides, not you
 - 🔄 Updates don't sync across platforms
-- ❌ Switch AI tools = start over
 
 ### The AI Skills Solution
 
@@ -122,21 +122,21 @@ Write once. Use everywhere. You own your knowledge.
 
 ### AI Skills vs Platform-Specific Skills
 
-Both Claude Skills and AI Skills use **progressive disclosure** (load on-demand, not everything at once). The difference is portability and control:
+Both Claude Skills and AI Skills use **progressive disclosure** (load on-demand, not everything at once). The differences are in discovery and portability:
 
 | Aspect | Claude Skills / Cursor Rules / etc. | AI Skills |
 |--------|-------------------------------------|-----------|
-| **Works on** | Only that platform | Any LLM with MCP or REST |
-| **Loading** | On-demand (similar) | On-demand (similar) |
-| **Ownership** | Platform marketplace | You (local files, your git) |
-| **Portability** | Zero (rewrite for each platform) | 100% (same skill everywhere) |
-| **Discovery** | Platform's algorithm | Semantic + BM25 hybrid search |
-| **Ambiguity** | Platform decides | Asks you when multiple match |
+| **Works on** | Designed for one platform | Any LLM with MCP or REST |
+| **Loading** | On-demand | On-demand (same) |
+| **Portability** | Manual export/adapt | Automatic (same skill everywhere) |
+| **Discovery (few skills)** | Works fine | Works fine |
+| **Discovery (many skills)** | List/browse, platform picks | Semantic search, you choose |
+| **Ambiguity handling** | Platform decides for you | Asks which skill you want |
 | **Customization** | Fork and edit | Variables + `.local.md` overrides |
-| **Offline** | Requires platform | Fully offline (local embeddings) |
-| **Open Source** | Usually closed | Yes, AGPL-3.0 |
+| **Offline** | Requires platform connection | Fully offline (local embeddings) |
+| **Open Source** | Varies | Yes, AGPL-3.0 |
 
-> **Note:** Claude Skills are well-designed technically. The issue isn't quality—it's that your expertise gets locked into one vendor's ecosystem. AI Skills gives you the same power, everywhere.
+> **Note:** Claude Skills are well-designed. The difference shows at scale: with 50+ skills across multiple tools, semantic search and automatic portability become essential.
 
 ### Why This Matters
 
@@ -155,14 +155,20 @@ Your skills travel with you, not with the vendor.
 </details>
 
 <details>
-<summary><b>💰 No Marketplace Cuts</b></summary>
+<summary><b>🔍 Semantic Search at Scale</b></summary>
 
-Platform marketplaces typically take 20-30% of skill sales. With AI Skills:
+With 5 skills, you remember what each does. With 50+, you need search:
 
-- Share skills freely via git
-- Sell directly if you want
-- No middleman, no approval process
-- Your expertise, your rules
+```
+Platform skills: Browse a list, read descriptions, hope you pick right
+
+AI Skills: "help me optimize database queries"
+    → Hybrid search (semantic + keywords)
+    → Finds: database-optimization (0.87), caching-strategies (0.72)
+    → Asks you if scores are close: "Which one do you want?"
+```
+
+The more skills you have, the more this matters.
 
 </details>
 
