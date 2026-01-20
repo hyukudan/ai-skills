@@ -112,6 +112,40 @@ print(result.content)      # → Rendered skill content
 - 📝 **Template Variables** for dynamic skill content
 - 🔄 **Multiple Results** with `limit` parameter
 - ⚡ **Lazy Loading** for fast startup
+- 🤔 **Ambiguous Detection** - asks when multiple skills match similarly
+
+### Ambiguous Match Detection
+
+When multiple skills have similar relevance scores, the router returns candidates instead of picking arbitrarily:
+
+```python
+result = router.use("help with javascript")
+
+if result.ambiguous:
+    # Multiple skills matched with similar scores
+    print("Which skill do you want?")
+    for c in result.candidates:
+        print(f"  - {c.name}: {c.description} ({c.score:.0%})")
+
+    # Then load the chosen one
+    result = router.use_by_name("javascript-debugging")
+else:
+    print(result.content)
+```
+
+MCP clients (like Claude Code) will receive candidates and can ask the user which skill they prefer:
+```json
+{
+  "ambiguous": true,
+  "candidates": [
+    {"name": "javascript-debugging", "score": 0.82, "description": "..."},
+    {"name": "nodejs-development", "score": 0.79, "description": "..."}
+  ],
+  "hint": "Use skill_read with the chosen skill name"
+}
+```
+
+Set `auto_select=true` to always pick the best match without asking.
 
 ### Hybrid Search Engine
 

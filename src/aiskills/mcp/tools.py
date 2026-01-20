@@ -70,6 +70,14 @@ class UseSkillInput(BaseModel):
         default=None,
         description="Optional variables to customize the skill output",
     )
+    auto_select: bool = Field(
+        default=False,
+        description=(
+            "If True, always select the best matching skill. "
+            "If False (default), returns candidates when multiple skills match similarly, "
+            "allowing you to ask the user which one they prefer."
+        ),
+    )
 
 
 class SkillCategoriesInput(BaseModel):

@@ -323,7 +323,27 @@ async def handle_use_skill(arguments: dict[str, Any]) -> dict[str, Any]:
     result = router.use(
         context=input_data.context,
         variables=input_data.variables,
+        auto_select=input_data.auto_select,
     )
+
+    # Handle ambiguous results - return candidates for LLM/user to choose
+    if result.ambiguous:
+        return {
+            "ambiguous": True,
+            "message": "Multiple skills match your query with similar relevance. Please choose one:",
+            "matched_query": result.matched_query,
+            "candidates": [
+                {
+                    "name": c.name,
+                    "description": c.description,
+                    "score": c.score,
+                    "category": c.category,
+                    "tags": c.tags,
+                }
+                for c in result.candidates
+            ],
+            "hint": "Use skill_read with the chosen skill name, or call use_skill again with auto_select=true to pick the best match automatically.",
+        }
 
     return {
         "skill_name": result.skill_name,

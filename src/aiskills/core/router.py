@@ -18,6 +18,16 @@ from pydantic import BaseModel, Field
 from .scoping import ScopeContext, ScopeMatcher, get_scope_matcher
 
 
+class SkillCandidate(BaseModel):
+    """A candidate skill when multiple skills match similarly."""
+
+    name: str
+    description: str
+    score: float
+    category: str | None = None
+    tags: list[str] = Field(default_factory=list)
+
+
 class UseResult(BaseModel):
     """Result from using a skill (Phase 2: Load)."""
 
@@ -29,6 +39,9 @@ class UseResult(BaseModel):
     # Progressive disclosure Phase 3 info
     available_resources: list[str] = Field(default_factory=list)
     tokens_used: int | None = None
+    # Ambiguous match info
+    ambiguous: bool = False
+    candidates: list[SkillCandidate] = Field(default_factory=list)
 
 
 class SkillRouter:
@@ -150,6 +163,8 @@ class SkillRouter:
         min_score: float = 0.2,
         active_paths: list[str] | None = None,
         languages: list[str] | None = None,
+        ambiguity_threshold: float = 0.1,
+        auto_select: bool = False,
     ) -> UseResult | list[UseResult]:
         """Phase 2: Load and return skill content.
 
@@ -164,14 +179,23 @@ class SkillRouter:
             min_score: Minimum similarity score threshold
             active_paths: File paths being worked on (for scope matching)
             languages: Languages in current context
+            ambiguity_threshold: Score difference threshold to consider matches
+                                 ambiguous (default 0.1). Set to 0 to disable.
+            auto_select: If True, always select best match even if ambiguous.
+                        If False (default), return candidates when ambiguous.
 
         Returns:
-            Single UseResult if limit=1, otherwise list of UseResult
+            Single UseResult if limit=1, otherwise list of UseResult.
+            If ambiguous=True in result, content is empty and candidates
+            contains the similar skills to choose from.
 
         Example:
             >>> router = SkillRouter()
             >>> result = router.use("help me debug python")
-            >>> print(result.content)  # Rendered skill content
+            >>> if result.ambiguous:
+            ...     print("Multiple matches:", result.candidates)
+            ... else:
+            ...     print(result.content)  # Rendered skill content
         """
         variables = variables or {}
 
@@ -223,6 +247,47 @@ class SkillRouter:
         sorted_skills = self.scope_matcher.sort_by_priority(
             scope_filtered, semantic_scores
         )
+
+        # Check for ambiguous matches (multiple skills with similar scores)
+        if (
+            limit == 1
+            and not auto_select
+            and ambiguity_threshold > 0
+            and len(sorted_skills) >= 2
+        ):
+            top_score = sorted_skills[0][1]
+            # Find all skills within threshold of top score
+            similar_skills = [
+                (idx, score)
+                for idx, score in sorted_skills
+                if top_score - score <= ambiguity_threshold
+            ]
+
+            if len(similar_skills) >= 2:
+                # Return ambiguous result with candidates
+                candidates = []
+                for skill_idx, score in similar_skills[:5]:  # Max 5 candidates
+                    skill = self.manager.get(skill_idx.name)
+                    if skill:
+                        candidates.append(
+                            SkillCandidate(
+                                name=skill_idx.name,
+                                description=skill.manifest.description[:200],
+                                score=round(score, 3),
+                                category=skill.manifest.category,
+                                tags=skill.manifest.tags[:5],
+                            )
+                        )
+
+                if len(candidates) >= 2:
+                    return UseResult(
+                        skill_name="",
+                        content="",
+                        score=top_score,
+                        matched_query=context,
+                        ambiguous=True,
+                        candidates=candidates,
+                    )
 
         use_results: list[UseResult] = []
 
