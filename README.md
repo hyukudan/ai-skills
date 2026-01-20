@@ -190,6 +190,120 @@ aiskills llm ollama "Debug my Python code"
 aiskills llm list-models
 ```
 
+## 📦 Bundled Skills
+
+Ai Skills ships with **23 ready-to-use marketing and growth skills** covering the full marketing stack. Install them globally to make them available across all your projects:
+
+```bash
+# Install all bundled skills
+aiskills install examples/skills/ --global
+
+# Or install specific skills
+aiskills install examples/skills/page-cro --global
+```
+
+### Marketing Skills Library
+
+<details>
+<summary><b>🎯 Conversion Rate Optimization (6 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `page-cro` | Analyze and optimize landing pages for conversion. Value propositions, headlines, CTAs, visual hierarchy, trust signals. |
+| `signup-flow-cro` | Reduce signup friction and increase completion rates. Field optimization, single vs multi-step, social auth. |
+| `onboarding-cro` | Optimize user activation and first-run experience. Checklists, empty states, product tours, engagement loops. |
+| `form-cro` | Maximize form completion rates. Field strategy, layout, validation, mobile optimization. |
+| `popup-cro` | Create high-converting popups without annoying users. Exit intent, triggers, timing, frequency capping. |
+| `paywall-upgrade-cro` | Convert free users to paid. Feature gates, usage limits, trial flows, upgrade psychology. |
+
+```bash
+aiskills use "optimize my pricing page for conversions"
+aiskills use "reduce signup form abandonment"
+aiskills use "design an exit-intent popup"
+```
+</details>
+
+<details>
+<summary><b>✍️ Content & Copywriting (4 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `copywriting` | Write marketing copy that converts. Headlines, CTAs, page structure, voice guidelines. |
+| `copy-editing` | Systematically improve existing copy. The Seven Sweeps: Clarity, Voice, So What, Prove It, Specificity, Emotion, Risk. |
+| `email-sequence` | Design email sequences and drip campaigns. Welcome, nurture, re-engagement, onboarding, billing emails. |
+| `social-content` | Create engaging social media content. Platform strategies, post templates, hooks, repurposing systems. |
+
+```bash
+aiskills use "write a compelling headline for my SaaS"
+aiskills use "create a 7-email welcome sequence"
+aiskills use "write a LinkedIn post about our launch"
+```
+</details>
+
+<details>
+<summary><b>🔍 SEO (4 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `seo-audit` | Audit websites for SEO issues. Crawlability, indexation, Core Web Vitals, on-page optimization, E-E-A-T. |
+| `programmatic-seo` | Build SEO pages at scale. The 12 pSEO playbooks: templates, comparisons, locations, integrations, glossary. |
+| `schema-markup` | Implement structured data for rich results. JSON-LD examples for Organization, Article, Product, FAQ, HowTo. |
+| `competitor-alternatives` | Create comparison and alternative pages. "[X] vs [Y]" pages, "[X] alternatives" pages, competitor positioning. |
+
+```bash
+aiskills use "audit my site for technical SEO issues"
+aiskills use "implement FAQ schema markup"
+aiskills use "create a competitor comparison page"
+```
+</details>
+
+<details>
+<summary><b>📊 Ads & Analytics (3 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `paid-ads` | Create and optimize paid campaigns. Google, Meta, LinkedIn. Targeting, creative, bidding, retargeting. |
+| `analytics-tracking` | Set up analytics that inform decisions. GA4, GTM, event design, UTM strategy, tracking plans. |
+| `ab-test-setup` | Design statistically valid A/B tests. Hypothesis framework, sample size, metrics selection, analysis. |
+
+```bash
+aiskills use "set up Google Ads for my B2B SaaS"
+aiskills use "design an A/B test for my checkout flow"
+aiskills use "create a GA4 tracking plan"
+```
+</details>
+
+<details>
+<summary><b>🚀 Growth & Strategy (6 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `pricing-strategy` | Design pricing that maximizes revenue. Value metrics, tier design, anchoring, pricing pages. |
+| `launch-strategy` | Plan and execute product launches. Pre-launch, launch day, post-launch playbooks. |
+| `referral-program` | Build referral and affiliate programs. Viral loops, incentive structures, program mechanics. |
+| `free-tool-strategy` | Use engineering as marketing. Free tools, calculators, APIs that drive organic growth. |
+| `marketing-ideas` | Library of marketing tactics. Channel strategies, growth levers, campaign ideas by stage. |
+| `marketing-psychology` | Apply behavioral science to marketing. Cognitive biases, persuasion principles, decision psychology. |
+
+```bash
+aiskills use "design a freemium pricing model"
+aiskills use "plan a Product Hunt launch"
+aiskills use "create a referral program for my app"
+```
+</details>
+
+### Development Skills
+
+The examples also include **30+ development skills** for coding, architecture, and DevOps:
+
+```bash
+# Some available dev skills
+aiskills use "debug a Python memory leak"
+aiskills use "design a REST API"
+aiskills use "set up CI/CD with GitHub Actions"
+aiskills use "implement authentication patterns"
+```
+
 ## 📖 Skill Format
 
 Skills are simple markdown files with power-packed frontmatter.

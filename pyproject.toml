@@ -89,6 +89,13 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/aiskills"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/aiskills",
+    "examples/skills/**/*.md",
+    "examples/README.md",
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"
