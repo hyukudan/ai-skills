@@ -174,6 +174,25 @@ response = client.chat("Explain async patterns")
 | **Claude Desktop** | - | - | MCP Server | [Guide](docs/integrations/claude_desktop.md) |
 | **Claude Code** | - | - | Plugin + MCP | [Guide](plugin/README.md) |
 
+### Claude Code Quick Start
+
+```bash
+# 1. Install aiskills (if not already)
+pip install aiskills[all]
+
+# 2. Add MCP server to Claude Code
+claude mcp add aiskills -- aiskills mcp serve
+
+# 3. Restart Claude Code and verify
+claude
+/mcp  # Should show: aiskills (connected)
+```
+
+Then ask Claude Code things like:
+- "what are best practices for API design?"
+- "list available skills"
+- "show me the testing-patterns skill"
+
 ### Token Optimization (MCP)
 
 The MCP server is optimized to **avoid unnecessary API calls**. Claude only uses skills when you explicitly ask for:
