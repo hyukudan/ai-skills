@@ -24,7 +24,6 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 VENV_DIR="$REPO_DIR/.venv"
-PLUGIN_DIR="$HOME/.claude/plugins/aiskills"
 
 echo -e "${BLUE}"
 echo "=============================================="
@@ -91,20 +90,25 @@ aiskills search-index index 2>/dev/null
 echo -e "  ${GREEN}✓${NC} Semantic search index built"
 
 # -----------------------------------------------------------------------------
-# Step 6: Setup Claude Code plugin
+# Step 6: Setup Claude Code MCP server
 # -----------------------------------------------------------------------------
-echo -e "${YELLOW}[6/6]${NC} Configuring Claude Code plugin..."
+echo -e "${YELLOW}[6/6]${NC} Configuring Claude Code MCP server..."
 
-mkdir -p "$HOME/.claude/plugins"
+WRAPPER_SCRIPT="$REPO_DIR/plugin/aiskills-wrapper.sh"
 
-# Remove existing symlink/directory
-[ -L "$PLUGIN_DIR" ] && rm "$PLUGIN_DIR"
-[ -d "$PLUGIN_DIR" ] && mv "$PLUGIN_DIR" "${PLUGIN_DIR}.bak.$(date +%s)"
+# Check if claude command exists
+if command -v claude &> /dev/null; then
+    # Remove existing MCP server if present
+    claude mcp remove aiskills 2>/dev/null || true
 
-# Create symlink
-ln -s "$REPO_DIR/plugin" "$PLUGIN_DIR"
-
-echo -e "  ${GREEN}✓${NC} Plugin linked: $PLUGIN_DIR"
+    # Add MCP server using wrapper script
+    claude mcp add aiskills -- "$WRAPPER_SCRIPT" mcp serve
+    echo -e "  ${GREEN}✓${NC} MCP server configured"
+else
+    echo -e "  ${YELLOW}!${NC} Claude Code CLI not found"
+    echo "  After installing Claude Code, run:"
+    echo "  claude mcp add aiskills -- $WRAPPER_SCRIPT mcp serve"
+fi
 
 # -----------------------------------------------------------------------------
 # Create activation helper script
@@ -138,9 +142,10 @@ echo "  source $REPO_DIR/activate-aiskills.sh"
 echo "  aiskills use \"optimize my landing page\""
 echo ""
 echo -e "${BLUE}In Claude Code (after restart):${NC}"
-echo "  /skills              - List all skills"
-echo "  /skill page-cro      - Read a specific skill"
-echo "  /skill-search \"CRO\"  - Search skills"
+echo "  /mcp                              - Verify connection"
+echo "  \"list available skills\"           - List all skills"
+echo "  \"show me the api-design skill\"    - Read a skill"
+echo "  \"best practices for API design?\"  - Get guidance"
 echo ""
-echo -e "${YELLOW}⚠  Restart Claude Code to load the plugin${NC}"
+echo -e "${YELLOW}⚠  Restart Claude Code to load the MCP server${NC}"
 echo ""

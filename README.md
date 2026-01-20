@@ -176,15 +176,24 @@ response = client.chat("Explain async patterns")
 
 ### Claude Code Quick Start
 
+**Option A: One-command setup (from source)**
 ```bash
-# 1. Install aiskills (if not already)
+git clone https://github.com/hyukudan/ai-skills.git
+cd ai-skills
+./scripts/setup-claude.sh
+```
+
+This automatically creates a virtualenv, installs dependencies, installs all skills, and configures Claude Code.
+
+**Option B: Manual setup (pip install)**
+```bash
+# 1. Install aiskills
 pip install aiskills[all]
 
 # 2. Add MCP server to Claude Code
 claude mcp add aiskills -- aiskills mcp serve
 
 # 3. Restart Claude Code and verify
-claude
 /mcp  # Should show: aiskills (connected)
 ```
 
