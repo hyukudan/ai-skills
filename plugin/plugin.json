@@ -24,7 +24,7 @@
     "servers": [
       {
         "name": "aiskills",
-        "command": "aiskills",
+        "command": "./aiskills-wrapper.sh",
         "args": [
           "mcp",
           "serve"
