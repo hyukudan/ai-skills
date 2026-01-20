@@ -50,21 +50,46 @@ If it shows "No MCP servers configured", check:
 - The wrapper script is executable (`chmod +x plugin/aiskills-wrapper.sh`)
 - aiskills is properly installed in the virtualenv
 
+## Quick Test
+
+Once connected, try these commands in Claude Code to verify everything works:
+
+```
+# List available skills
+> list all skills
+
+# Search for a topic
+> search skills about testing
+
+# Read a specific skill
+> show me the api-design skill
+
+# Get guidance (uses use_skill)
+> what are best practices for API design?
+```
+
 ## MCP Tools
 
-Once connected, Claude Code has access to these tools:
+| Tool | When Claude Uses It |
+|------|---------------------|
+| `use_skill` | When you ask for best practices, design patterns, or architectural guidance |
+| `skill_search` | When you explicitly ask to search or find skills |
+| `skill_read` | When you ask to show/read a specific skill by name |
+| `skill_list` | When you ask "what skills are available" |
+| `skill_suggest` | When you ask for skill recommendations |
+| `skill_categories` | When you want to browse skills by category |
 
-| Tool | Description |
-|------|-------------|
-| `search_skills` | Search for skills using semantic + text hybrid search |
-| `use_skill` | Load and render a skill's full content |
-| `browse_skills` | Browse skills with lightweight metadata (tokens-efficient) |
-| `list_skills` | List all installed skills |
+### When Skills Are Used (Token Optimization)
 
-Claude will automatically use these tools when you ask questions like:
-- "How do I debug a Python memory leak?"
-- "Show me skills about API design"
-- "What testing strategies should I use?"
+To avoid unnecessary API calls, Claude **only** uses skills when you:
+- Explicitly ask for best practices or design guidance
+- Ask about skills directly ("list skills", "search skills", "show skill X")
+- Request architectural or strategic help
+
+Claude will **not** use skills for:
+- Simple code questions or syntax help
+- Quick bug fixes
+- General conversation
 
 ## Troubleshooting
 

@@ -88,68 +88,68 @@ class SkillVarsInput(BaseModel):
 
 
 # Tool schemas for MCP
+# NOTE: Descriptions are intentionally specific to avoid unnecessary tool calls.
+# Claude should only use these tools when the user explicitly needs architectural
+# guidance, best practices, or design patterns - NOT for simple code questions.
 TOOL_DEFINITIONS = [
     {
         "name": "use_skill",
         "description": (
-            "Find and use the best matching AI skill for your current task. "
-            "Describe what you need in natural language and this tool will find "
-            "the most relevant skill and return its content. This is the primary "
-            "way to leverage AI skills - just describe your problem."
+            "Get expert guidance from AI Skills knowledge base. "
+            "ONLY use when the user explicitly asks for: best practices, design patterns, "
+            "architectural guidance, or debugging strategies. "
+            "DO NOT use for: simple code questions, syntax help, or quick fixes. "
+            "Examples of when to use: 'what are best practices for API design', "
+            "'how should I structure authentication', 'guide me on database optimization'."
         ),
         "inputSchema": UseSkillInput.model_json_schema(),
     },
     {
         "name": "skill_search",
         "description": (
-            "Search for AI skills by semantic similarity, text matching, or hybrid. "
-            "Use this to find relevant skills for a given task or topic. "
-            "Semantic search understands meaning, text search matches keywords, "
-            "and hybrid combines both for best accuracy."
+            "Search the AI Skills knowledge base. Only use when the user explicitly "
+            "asks to search or find skills, or asks 'what skills are available for X'. "
+            "Do not use proactively."
         ),
         "inputSchema": SkillSearchInput.model_json_schema(),
     },
     {
         "name": "skill_read",
         "description": (
-            "Read the content of a skill by name. Returns the skill's markdown content "
-            "with optional template variables rendered. Use this after finding a skill "
-            "with skill_search to get its full content."
+            "Read a specific skill by name. Only use when the user explicitly asks "
+            "to 'show skill X' or 'read skill X'. Requires knowing the skill name first."
         ),
         "inputSchema": SkillReadInput.model_json_schema(),
     },
     {
         "name": "skill_list",
         "description": (
-            "List all installed skills. Returns skill names, versions, and descriptions. "
-            "Use this to see what skills are available in the system."
+            "List all installed AI skills. Only use when the user explicitly asks "
+            "'what skills are available', 'list skills', or 'show all skills'."
         ),
         "inputSchema": SkillListInput.model_json_schema(),
     },
     {
         "name": "skill_suggest",
         "description": (
-            "Suggest relevant skills based on the current context or task. "
-            "Provide a description of what you're working on, and this tool will "
-            "return the most relevant skills that might help."
+            "Suggest relevant skills for a task. Only use when the user explicitly "
+            "asks for skill suggestions or recommendations."
         ),
         "inputSchema": SkillSuggestInput.model_json_schema(),
     },
     {
         "name": "skill_categories",
         "description": (
-            "List all skill categories with their skills. Use this to explore "
-            "available skills organized by domain (e.g., development/debugging, "
-            "devops/automation). Helps discover what skills are available."
+            "List skill categories. Only use when the user asks about skill categories "
+            "or wants to browse skills by domain."
         ),
         "inputSchema": SkillCategoriesInput.model_json_schema(),
     },
     {
         "name": "skill_vars",
         "description": (
-            "Get the available variables for a skill. Returns variable names, types, "
-            "allowed values, and descriptions. Use this before calling skill_read "
-            "to understand what customization options are available."
+            "Get variables for a specific skill. Only use when the user asks about "
+            "customization options for a specific skill."
         ),
         "inputSchema": SkillVarsInput.model_json_schema(),
     },
