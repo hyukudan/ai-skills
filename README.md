@@ -174,6 +174,19 @@ response = client.chat("Explain async patterns")
 | **Claude Desktop** | - | - | MCP Server | [Guide](docs/integrations/claude_desktop.md) |
 | **Claude Code** | - | - | Plugin + MCP | [Guide](plugin/README.md) |
 
+### Token Optimization (MCP)
+
+The MCP server is optimized to **avoid unnecessary API calls**. Claude only uses skills when you explicitly ask for:
+
+| Trigger | Example |
+|---------|---------|
+| Best practices | "what are best practices for API design?" |
+| Design patterns | "show me authentication patterns" |
+| Architectural guidance | "how should I structure this service?" |
+| Explicit skill requests | "list skills", "search skills about testing" |
+
+Claude will **not** call skills for simple questions like "how do I write a for loop" - this saves tokens and keeps responses fast.
+
 ### CLI Integration Testing
 
 ```bash
