@@ -123,6 +123,7 @@ class SkillManager:
         name: str,
         variables: dict | None = None,
         resolve_composition: bool = True,
+        raw: bool = False,
     ) -> str:
         """Read skill content for agent consumption.
 
@@ -130,6 +131,7 @@ class SkillManager:
             name: Skill name
             variables: Optional variables to render
             resolve_composition: If True, resolve extends/includes
+            raw: If True, return raw content without rendering templates
 
         Returns:
             Formatted skill content
@@ -142,6 +144,10 @@ class SkillManager:
             raise LoadError(f"Skill not found: {name}")
 
         content = skill.content
+
+        # If raw, return unprocessed content
+        if raw:
+            return content
 
         # Resolve composition (extends/includes)
         if resolve_composition and skill.manifest.has_composition:
