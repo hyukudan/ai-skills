@@ -67,6 +67,137 @@ aiskills mcp serve    # MCP for Claude/Gemini/Codex
 aiskills api serve    # REST API for any LLM
 ```
 
+## 🤔 Why AI Skills?
+
+You might wonder: *"Claude has its own Skills marketplace. Cursor has rules. Why use AI Skills?"*
+
+Great question. Here's the problem: **every AI platform has its own skills format, and none of them are portable.**
+
+### The Vendor Lock-in Problem
+
+```
+Today's reality: Each platform has its own skills ecosystem
+
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│   Claude    │  │   Cursor    │  │   Codex     │  │   Gemini    │
+│   Skills    │  │   Rules     │  │   AGENTS.md │  │   Prompts   │
+│ Marketplace │  │   Library   │  │   + Skills  │  │   (coming)  │
+└─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘
+       │                │                │                │
+       ▼                ▼                ▼                ▼
+   Only Claude      Only Cursor      Only Codex      Only Gemini
+```
+
+**The cost of fragmentation:**
+- 🔒 Your expertise is locked to one vendor
+- 📝 Want the same skill on Gemini? Rewrite it
+- 💸 Marketplaces take cuts and control distribution
+- 🔄 Updates don't sync across platforms
+- ❌ Switch AI tools = start over
+
+### The AI Skills Solution
+
+```
+With AI Skills: One knowledge base, every AI tool
+
+~/.aiskills/skills/
+├── api-design/
+├── python-debugging/
+├── react-patterns/
+└── ...your expertise (YOU own it)
+
+              │
+              ▼ MCP Protocol (open standard)
+              │
+    ┌─────────┼─────────┬───────────┬───────────┐
+    │         │         │           │           │
+    ▼         ▼         ▼           ▼           ▼
+┌───────┐ ┌───────┐ ┌───────┐ ┌─────────┐ ┌────────┐
+│Claude │ │Gemini │ │Codex  │ │ Cursor  │ │ Ollama │
+│ Code  │ │  CLI  │ │  CLI  │ │   IDE   │ │ Local  │
+└───────┘ └───────┘ └───────┘ └─────────┘ └────────┘
+
+Write once. Use everywhere. You own your knowledge.
+```
+
+### AI Skills vs Platform-Specific Skills
+
+Both Claude Skills and AI Skills use **progressive disclosure** (load on-demand, not everything at once). The difference is portability and control:
+
+| Aspect | Claude Skills / Cursor Rules / etc. | AI Skills |
+|--------|-------------------------------------|-----------|
+| **Works on** | Only that platform | Any LLM with MCP or REST |
+| **Loading** | On-demand (similar) | On-demand (similar) |
+| **Ownership** | Platform marketplace | You (local files, your git) |
+| **Portability** | Zero (rewrite for each platform) | 100% (same skill everywhere) |
+| **Discovery** | Platform's algorithm | Semantic + BM25 hybrid search |
+| **Ambiguity** | Platform decides | Asks you when multiple match |
+| **Customization** | Fork and edit | Variables + `.local.md` overrides |
+| **Offline** | Requires platform | Fully offline (local embeddings) |
+| **Open Source** | Usually closed | Yes, AGPL-3.0 |
+
+> **Note:** Claude Skills are well-designed technically. The issue isn't quality—it's that your expertise gets locked into one vendor's ecosystem. AI Skills gives you the same power, everywhere.
+
+### Why This Matters
+
+<details>
+<summary><b>🔮 Future-Proof Your Knowledge</b></summary>
+
+Today you use Claude. Tomorrow Gemini might be better for your use case. Next month a new AI tool emerges.
+
+With platform-specific skills, you're starting over each time.
+With AI Skills, you just run `./setup.sh --gemini` and keep working.
+
+```
+Your skills travel with you, not with the vendor.
+```
+
+</details>
+
+<details>
+<summary><b>💰 No Marketplace Cuts</b></summary>
+
+Platform marketplaces typically take 20-30% of skill sales. With AI Skills:
+
+- Share skills freely via git
+- Sell directly if you want
+- No middleman, no approval process
+- Your expertise, your rules
+
+</details>
+
+<details>
+<summary><b>🔧 True Customization</b></summary>
+
+Platform skills: "Fork it and maintain your own copy"
+
+AI Skills: Local overrides without forking
+
+```
+my-skill/
+├── SKILL.md          ← Original (auto-updates)
+└── SKILL.local.md    ← Your customizations (gitignored)
+```
+
+The original updates, your customizations persist.
+
+</details>
+
+### When to Use What
+
+| Use Case | Recommendation |
+|----------|---------------|
+| Project-specific rules (formatting, conventions) | Native (`CLAUDE.md`, `.cursorrules`) |
+| Single platform, no plans to switch | Platform skills (Claude Skills, etc.) |
+| Reusable knowledge across projects | **AI Skills** |
+| Team-shared expertise | **AI Skills** (with local overrides) |
+| Multi-LLM workflow | **AI Skills** (portability) |
+| You want to own your knowledge | **AI Skills** |
+
+**Bottom line:** Platform skills are fine if you're committed to one vendor. AI Skills if you want portability, ownership, and freedom.
+
+---
+
 ## 💡 Core Concepts
 
 Ai Skills is built on three simple pillars:
