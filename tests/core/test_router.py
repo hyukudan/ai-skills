@@ -64,20 +64,34 @@ class TestSkillRouter:
     def test_use_with_result(self):
         """Test use() with a matching skill."""
         router = SkillRouter()
-        
+
         mock_skill_idx = MagicMock()
         mock_skill_idx.name = "debug-python"
-        
+
         mock_registry = MagicMock()
         mock_registry.search.return_value = [(mock_skill_idx, 0.89)]
         router._registry = mock_registry
-        
+
+        mock_skill = MagicMock()
+        mock_skill.list_resources.return_value = []
+        mock_skill.estimate_tokens.return_value = 100
+
         mock_manager = MagicMock()
         mock_manager.read.return_value = "# Debug Python\n\nStep 1..."
+        mock_manager.get.return_value = mock_skill
         router._manager = mock_manager
-        
+
+        # Mock scope matcher
+        from aiskills.core.scoping import ScopeMatchResult
+        mock_scope_matcher = MagicMock()
+        mock_scope_matcher.filter_by_scope.return_value = [
+            (mock_skill_idx, ScopeMatchResult(matches=True))
+        ]
+        mock_scope_matcher.sort_by_priority.return_value = [(mock_skill_idx, 0.89)]
+        router._scope_matcher = mock_scope_matcher
+
         result = router.use("help me debug python")
-        
+
         assert result.skill_name == "debug-python"
         assert result.content == "# Debug Python\n\nStep 1..."
         assert result.score == 0.89
@@ -86,23 +100,38 @@ class TestSkillRouter:
     def test_use_with_variables(self):
         """Test use() passes variables correctly."""
         router = SkillRouter()
-        
+
         mock_skill_idx = MagicMock()
         mock_skill_idx.name = "template-skill"
-        
+
         mock_registry = MagicMock()
         mock_registry.search.return_value = [(mock_skill_idx, 0.95)]
         router._registry = mock_registry
-        
+
+        mock_skill = MagicMock()
+        mock_skill.list_resources.return_value = []
+        mock_skill.estimate_tokens.return_value = 100
+
         mock_manager = MagicMock()
         mock_manager.read.return_value = "Content for python"
+        mock_manager.get.return_value = mock_skill
         router._manager = mock_manager
-        
+
+        # Mock scope matcher to pass through
+        from aiskills.core.scoping import ScopeMatchResult
+        mock_scope_matcher = MagicMock()
+        mock_scope_matcher.filter_by_scope.return_value = [
+            (mock_skill_idx, ScopeMatchResult(matches=True))
+        ]
+        mock_scope_matcher.sort_by_priority.return_value = [(mock_skill_idx, 0.95)]
+        router._scope_matcher = mock_scope_matcher
+
         result = router.use("need help", variables={"lang": "python"})
-        
+
         mock_manager.read.assert_called_once_with(
             name="template-skill",
             variables={"lang": "python"},
+            include_header=False,
         )
         assert result.variables_applied == {"lang": "python"}
 
@@ -131,25 +160,46 @@ class TestSkillRouter:
     def test_use_multiple_results(self):
         """Test use() with limit > 1."""
         router = SkillRouter()
-        
+
         mock_skill1 = MagicMock()
         mock_skill1.name = "skill-1"
         mock_skill2 = MagicMock()
         mock_skill2.name = "skill-2"
-        
+
         mock_registry = MagicMock()
         mock_registry.search.return_value = [
             (mock_skill1, 0.9),
             (mock_skill2, 0.8),
         ]
         router._registry = mock_registry
-        
+
+        mock_skill_obj1 = MagicMock()
+        mock_skill_obj1.list_resources.return_value = []
+        mock_skill_obj1.estimate_tokens.return_value = 100
+        mock_skill_obj2 = MagicMock()
+        mock_skill_obj2.list_resources.return_value = []
+        mock_skill_obj2.estimate_tokens.return_value = 100
+
         mock_manager = MagicMock()
         mock_manager.read.side_effect = ["Content 1", "Content 2"]
+        mock_manager.get.side_effect = [mock_skill_obj1, mock_skill_obj2]
         router._manager = mock_manager
-        
+
+        # Mock scope matcher
+        from aiskills.core.scoping import ScopeMatchResult
+        mock_scope_matcher = MagicMock()
+        mock_scope_matcher.filter_by_scope.return_value = [
+            (mock_skill1, ScopeMatchResult(matches=True)),
+            (mock_skill2, ScopeMatchResult(matches=True)),
+        ]
+        mock_scope_matcher.sort_by_priority.return_value = [
+            (mock_skill1, 0.9),
+            (mock_skill2, 0.8),
+        ]
+        router._scope_matcher = mock_scope_matcher
+
         results = router.use("query", limit=2)
-        
+
         assert isinstance(results, list)
         assert len(results) == 2
         assert results[0].skill_name == "skill-1"
@@ -187,31 +237,52 @@ class TestSkillRouter:
         assert result.score == 0.0
 
     def test_use_skips_failed_skills(self):
-        """Test use() skips skills that fail to load."""
+        """Test use() skips skills that fail to load when limit > 1."""
         router = SkillRouter()
-        
+
         mock_skill1 = MagicMock()
         mock_skill1.name = "broken-skill"
         mock_skill2 = MagicMock()
         mock_skill2.name = "working-skill"
-        
+
         mock_registry = MagicMock()
         mock_registry.search.return_value = [
             (mock_skill1, 0.9),
             (mock_skill2, 0.8),
         ]
         router._registry = mock_registry
-        
+
+        mock_skill_obj = MagicMock()
+        mock_skill_obj.list_resources.return_value = []
+        mock_skill_obj.estimate_tokens.return_value = 100
+
         mock_manager = MagicMock()
-        # First skill fails, second works
+        # First skill fails to load, second works
+        mock_manager.get.side_effect = [MagicMock(), mock_skill_obj]
         mock_manager.read.side_effect = [Exception("Load error"), "Working content"]
         router._manager = mock_manager
-        
-        result = router.use("query")
-        
-        # Should return the working skill
-        assert result.skill_name == "working-skill"
-        assert result.content == "Working content"
+
+        # Mock scope matcher
+        from aiskills.core.scoping import ScopeMatchResult
+        mock_scope_matcher = MagicMock()
+        mock_scope_matcher.filter_by_scope.return_value = [
+            (mock_skill1, ScopeMatchResult(matches=True)),
+            (mock_skill2, ScopeMatchResult(matches=True)),
+        ]
+        mock_scope_matcher.sort_by_priority.return_value = [
+            (mock_skill1, 0.9),
+            (mock_skill2, 0.8),
+        ]
+        router._scope_matcher = mock_scope_matcher
+
+        # Use limit=2 to process both skills (first fails, second works)
+        results = router.use("query", limit=2)
+
+        # Should return only the working skill
+        assert isinstance(results, list)
+        assert len(results) == 1
+        assert results[0].skill_name == "working-skill"
+        assert results[0].content == "Working content"
 
 
 class TestGetRouter:

@@ -48,8 +48,8 @@ The script will:
 
 Restart your CLI, then try:
 - **Claude Code:** `/mcp` to verify, then "best practices for API design?"
-- **Gemini CLI:** `@aiskills list skills` or "help me debug python"
-- **Codex CLI:** `@aiskills search testing` or "help me write tests"
+- **Gemini CLI:** `gemini mcp list` to verify, then "what skills do you have?"
+- **Codex CLI:** `codex mcp list` to verify, then "help me write tests"
 
 ### Manual / Other LLMs
 
@@ -331,6 +331,29 @@ Query: "how to make my database faster"
 - **Local embeddings** via FastEmbed (no API calls)
 - **Offline-first** - works without internet
 - **Auto-fallback** to text search if embeddings unavailable
+
+### Token Optimization
+
+Every token counts when working with LLMs. AI Skills optimizes responses at each phase:
+
+| Operation | Returns | Omits | Why |
+|-----------|---------|-------|-----|
+| **Search** | `name`, `description`, `category`, `score` | `tags`, `version` | Minimal data for decision-making |
+| **Read** | Full content + all metadata | - | Complete info when you need it |
+| **Browse** | Metadata + `tokens_est` | Content | Discover before loading |
+
+**Scores explained:**
+- `score` in results is the **semantic similarity** (0-1) - how well the query matches the skill
+- Internal ranking uses a **combined score** (semantic + priority + scope) but this is not exposed
+- This keeps scores interpretable: 0.89 means "89% similar to your query"
+
+```
+Search: "debug python" → [{name: "python-debugging", score: 0.89, ...}]
+                          ↑ Just 3 fields, no tags/version bloat
+
+Read: "python-debugging" → {content: "...", metadata: {tags, version, ...}}
+                           ↑ Full details when you actually need them
+```
 
 ### Access Methods
 

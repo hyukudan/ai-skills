@@ -248,42 +248,46 @@ class SkillRouter:
             scope_filtered, semantic_scores
         )
 
-        # Check for ambiguous matches (multiple skills with similar scores)
+        # Check for ambiguous matches (multiple skills with similar combined scores)
+        # Note: we use combined scores for ambiguity detection (internal ranking),
+        # but return semantic scores to the user (interpretable similarity)
         if (
             limit == 1
             and not auto_select
             and ambiguity_threshold > 0
             and len(sorted_skills) >= 2
         ):
-            top_score = sorted_skills[0][1]
-            # Find all skills within threshold of top score
+            top_combined = sorted_skills[0][1]
+            # Find all skills within threshold of top combined score
             similar_skills = [
-                (idx, score)
-                for idx, score in sorted_skills
-                if top_score - score <= ambiguity_threshold
+                (idx, combined)
+                for idx, combined in sorted_skills
+                if top_combined - combined <= ambiguity_threshold
             ]
 
             if len(similar_skills) >= 2:
-                # Return ambiguous result with candidates
+                # Return ambiguous result with candidates (using semantic scores)
                 candidates = []
-                for skill_idx, score in similar_skills[:5]:  # Max 5 candidates
+                for skill_idx, _combined in similar_skills[:5]:  # Max 5 candidates
                     skill = self.manager.get(skill_idx.name)
                     if skill:
+                        semantic = semantic_scores.get(skill_idx.name, 0.0)
                         candidates.append(
                             SkillCandidate(
                                 name=skill_idx.name,
                                 description=skill.manifest.description[:200],
-                                score=round(score, 3),
+                                score=round(semantic, 3),
                                 category=skill.manifest.category,
                                 tags=skill.manifest.tags[:5],
                             )
                         )
 
                 if len(candidates) >= 2:
+                    top_semantic = semantic_scores.get(sorted_skills[0][0].name, 0.0)
                     return UseResult(
                         skill_name="",
                         content="",
-                        score=top_score,
+                        score=round(top_semantic, 3),
                         matched_query=context,
                         ambiguous=True,
                         candidates=candidates,
@@ -291,7 +295,7 @@ class SkillRouter:
 
         use_results: list[UseResult] = []
 
-        for skill_idx, combined_score in sorted_skills[:limit]:
+        for skill_idx, _combined_score in sorted_skills[:limit]:
             try:
                 skill = self.manager.get(skill_idx.name)
                 if not skill:
@@ -308,11 +312,14 @@ class SkillRouter:
                 resources = skill.list_resources()
                 resource_names = [r.name for r in resources if r.allowed]
 
+                # Return semantic score (not combined) - combined is only for internal sorting
+                raw_semantic_score = semantic_scores.get(skill_idx.name, 0.0)
+
                 use_results.append(
                     UseResult(
                         skill_name=skill_idx.name,
                         content=content,
-                        score=round(combined_score, 3),
+                        score=round(raw_semantic_score, 3),
                         matched_query=context,
                         variables_applied=variables,
                         available_resources=resource_names,

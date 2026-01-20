@@ -82,60 +82,73 @@ detect_clis() {
 }
 
 interactive_select() {
-    echo -e "${BOLD}Which CLI tools do you want to configure?${NC}"
-    echo ""
-    echo "  1) Claude Code only"
-    echo "  2) Gemini CLI only"
-    echo "  3) Codex CLI only"
-    echo "  4) All installed CLIs"
-    echo "  5) Custom selection"
-    echo "  q) Quit"
-    echo ""
-    read -p "Select option [1-5, q]: " choice
+    # Pre-select installed CLIs by default
+    $CLAUDE_INSTALLED && SETUP_CLAUDE=true
+    $GEMINI_INSTALLED && SETUP_GEMINI=true
+    $CODEX_INSTALLED && SETUP_CODEX=true
 
-    case $choice in
-        1) SETUP_CLAUDE=true ;;
-        2) SETUP_GEMINI=true ;;
-        3) SETUP_CODEX=true ;;
-        4)
-            $CLAUDE_INSTALLED && SETUP_CLAUDE=true
-            $GEMINI_INSTALLED && SETUP_GEMINI=true
-            $CODEX_INSTALLED && SETUP_CODEX=true
-            ;;
-        5) custom_select ;;
-        q|Q) echo "Setup cancelled."; exit 0 ;;
-        *) echo -e "${RED}Invalid option${NC}"; exit 1 ;;
-    esac
-}
+    local first_draw=true
+    local menu_lines=8  # Number of lines in the menu (header + options + prompt)
 
-custom_select() {
-    echo ""
-    echo -e "${BOLD}Select CLIs to configure (y/n for each):${NC}"
-    echo ""
+    while true; do
+        # Move cursor up and clear previous menu (except on first draw)
+        if ! $first_draw; then
+            # Move up menu_lines and clear each line
+            for ((i=0; i<menu_lines; i++)); do
+                echo -ne "\033[A\033[2K"
+            done
+        fi
+        first_draw=false
 
-    if $CLAUDE_INSTALLED; then
-        read -p "  Configure Claude Code? [Y/n]: " yn
-        [[ ! "$yn" =~ ^[Nn]$ ]] && SETUP_CLAUDE=true
-    else
-        read -p "  Configure Claude Code? (not installed) [y/N]: " yn
-        [[ "$yn" =~ ^[Yy]$ ]] && SETUP_CLAUDE=true
-    fi
+        # Draw menu
+        echo -e "${BOLD}Which CLI tools do you want to configure?${NC}"
+        echo -e "${CYAN}(Press 1-3 to toggle, a=all, n=none, Enter=confirm, q=quit)${NC}"
+        echo ""
 
-    if $GEMINI_INSTALLED; then
-        read -p "  Configure Gemini CLI? [Y/n]: " yn
-        [[ ! "$yn" =~ ^[Nn]$ ]] && SETUP_GEMINI=true
-    else
-        read -p "  Configure Gemini CLI? (not installed) [y/N]: " yn
-        [[ "$yn" =~ ^[Yy]$ ]] && SETUP_GEMINI=true
-    fi
+        # Show checkbox for each CLI
+        if $SETUP_CLAUDE; then
+            echo -ne "  ${GREEN}[x]${NC} 1) Claude Code"
+        else
+            echo -ne "  [ ] 1) Claude Code"
+        fi
+        $CLAUDE_INSTALLED && echo -e "    ${GREEN}(installed)${NC}" || echo -e "    ${YELLOW}(not found)${NC}"
 
-    if $CODEX_INSTALLED; then
-        read -p "  Configure Codex CLI? [Y/n]: " yn
-        [[ ! "$yn" =~ ^[Nn]$ ]] && SETUP_CODEX=true
-    else
-        read -p "  Configure Codex CLI? (not installed) [y/N]: " yn
-        [[ "$yn" =~ ^[Yy]$ ]] && SETUP_CODEX=true
-    fi
+        if $SETUP_GEMINI; then
+            echo -ne "  ${GREEN}[x]${NC} 2) Gemini CLI"
+        else
+            echo -ne "  [ ] 2) Gemini CLI"
+        fi
+        $GEMINI_INSTALLED && echo -e "     ${GREEN}(installed)${NC}" || echo -e "     ${YELLOW}(not found)${NC}"
+
+        if $SETUP_CODEX; then
+            echo -ne "  ${GREEN}[x]${NC} 3) Codex CLI"
+        else
+            echo -ne "  [ ] 3) Codex CLI"
+        fi
+        $CODEX_INSTALLED && echo -e "      ${GREEN}(installed)${NC}" || echo -e "      ${YELLOW}(not found)${NC}"
+
+        echo ""
+        read -p "> " -n1 choice
+
+        case $choice in
+            1) $SETUP_CLAUDE && SETUP_CLAUDE=false || SETUP_CLAUDE=true ;;
+            2) $SETUP_GEMINI && SETUP_GEMINI=false || SETUP_GEMINI=true ;;
+            3) $SETUP_CODEX && SETUP_CODEX=false || SETUP_CODEX=true ;;
+            a|A)
+                SETUP_CLAUDE=true
+                SETUP_GEMINI=true
+                SETUP_CODEX=true
+                ;;
+            n|N)
+                SETUP_CLAUDE=false
+                SETUP_GEMINI=false
+                SETUP_CODEX=false
+                ;;
+            q|Q) echo ""; echo "Setup cancelled."; exit 0 ;;
+            "") echo ""; break ;;  # Enter confirms
+            *) ;;  # Ignore other keys
+        esac
+    done
 }
 
 parse_args() {
@@ -400,15 +413,17 @@ print_summary() {
 
     if $SETUP_GEMINI; then
         echo -e "${BOLD}In Gemini CLI:${NC}"
-        echo "  @aiskills list skills             - List all skills"
-        echo "  help me with debugging python     - Get guidance"
+        echo "  gemini mcp list                   - Verify connection"
+        echo "  \"what skills do you have?\"        - List skills (auto-calls MCP)"
+        echo "  \"help me debug python\"            - Get guidance (auto-calls MCP)"
         echo ""
     fi
 
     if $SETUP_CODEX; then
         echo -e "${BOLD}In Codex CLI:${NC}"
-        echo "  @aiskills search testing          - Search skills"
-        echo "  help me write unit tests          - Get guidance"
+        echo "  codex mcp list                    - Verify connection"
+        echo "  \"what testing skills are there?\"  - Search skills (auto-calls MCP)"
+        echo "  \"help me write unit tests\"        - Get guidance (auto-calls MCP)"
         echo ""
     fi
 

@@ -93,9 +93,7 @@ async def handle_skill_search(arguments: dict[str, Any]) -> dict[str, Any]:
             "results": [
                 {
                     "name": idx.name,
-                    "version": idx.version,
                     "description": idx.description,
-                    "tags": idx.tags,
                     "category": idx.category,
                 }
                 for idx in results
@@ -116,9 +114,7 @@ async def handle_skill_search(arguments: dict[str, Any]) -> dict[str, Any]:
                 "results": [
                     {
                         "name": idx.name,
-                        "version": idx.version,
                         "description": idx.description,
-                        "tags": idx.tags,
                         "category": idx.category,
                         "score": round(score, 3),
                     }
@@ -137,9 +133,7 @@ async def handle_skill_search(arguments: dict[str, Any]) -> dict[str, Any]:
                     "results": [
                         {
                             "name": idx.name,
-                            "version": idx.version,
                             "description": idx.description,
-                            "tags": idx.tags,
                             "category": idx.category,
                         }
                         for idx in results
@@ -161,9 +155,7 @@ async def handle_skill_search(arguments: dict[str, Any]) -> dict[str, Any]:
                 "results": [
                     {
                         "name": idx.name,
-                        "version": idx.version,
                         "description": idx.description,
-                        "tags": idx.tags,
                         "category": idx.category,
                         "score": round(score, 3),
                     }
@@ -182,9 +174,7 @@ async def handle_skill_search(arguments: dict[str, Any]) -> dict[str, Any]:
                     "results": [
                         {
                             "name": idx.name,
-                            "version": idx.version,
                             "description": idx.description,
-                            "tags": idx.tags,
                             "category": idx.category,
                         }
                         for idx in results
