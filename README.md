@@ -108,10 +108,44 @@ print(result.content)      # → Rendered skill content
 ```
 
 **Features:**
-- 🔍 **Semantic Search** with automatic fallback to text search
+- 🔍 **Hybrid Search** (semantic + BM25) for accurate matching
 - 📝 **Template Variables** for dynamic skill content
 - 🔄 **Multiple Results** with `limit` parameter
 - ⚡ **Lazy Loading** for fast startup
+
+### Hybrid Search Engine
+
+AI Skills combines two search methods for best results:
+
+| Method | How it works | Example |
+|--------|--------------|---------|
+| **Semantic** | Embeddings understand meaning | "make db faster" → finds `database-optimization` |
+| **BM25** | Text matching for precision | "pytest" → finds `testing-patterns` |
+| **Hybrid** | RRF combines both scores | Best of both worlds |
+
+```
+Query: "how to make my database faster"
+       ↓
+┌─────────────────┐     ┌─────────────────┐
+│ Semantic Search │     │   BM25 Search   │
+│  (embeddings)   │     │   (keywords)    │
+└────────┬────────┘     └────────┬────────┘
+         │                       │
+         └───────────┬───────────┘
+                     ↓
+          ┌─────────────────────┐
+          │ Reciprocal Rank     │
+          │ Fusion (RRF)        │
+          └──────────┬──────────┘
+                     ↓
+         database-optimization (68%)
+         performance-optimization (64%)
+         caching-strategies (61%)
+```
+
+- **Local embeddings** via FastEmbed (no API calls)
+- **Offline-first** - works without internet
+- **Auto-fallback** to text search if embeddings unavailable
 
 ### Access Methods
 
