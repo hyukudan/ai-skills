@@ -44,7 +44,7 @@ response = client.chat("Explain async patterns in Python")
 | **OpenAI / ChatGPT** | ✅ `create_openai_client()` | ✅ | - |
 | **Anthropic Claude** | ✅ `create_anthropic_client()` | ✅ | - |
 | **Google Gemini** | ✅ `create_gemini_client()` | ✅ | - |
-| **Ollama / Local** | ✅ `create_ollama_client()` | ✅ | - |
+| **Local LLMs (Ollama)** | ✅ `create_ollama_client()` | ✅ | - |
 | **Claude Code** | - | - | ✅ Plugin + MCP |
 | **Claude Desktop** | - | - | ✅ MCP Server |
 
@@ -55,7 +55,7 @@ response = client.chat("Explain async patterns in Python")
 | **OpenAI / ChatGPT** | [chatgpt.md](./chatgpt.md) | SDK wrapper or REST API |
 | **Anthropic Claude** | [anthropic.md](./anthropic.md) | SDK wrapper or Tool Use |
 | **Google Gemini** | [gemini.md](./gemini.md) | SDK wrapper or Function Calling |
-| **Ollama / Local LLMs** | [ollama.md](./ollama.md) | SDK wrapper or CLI pipe |
+| **Local LLMs (Ollama, vLLM)** | [ollama.md](./ollama.md) | SDK wrapper or CLI pipe |
 | **Claude Code** | [/plugin](../../plugin/README.md) | Plugin + MCP |
 | **Claude Desktop** | [claude_desktop.md](./claude_desktop.md) | MCP Server |
 | **Other LLMs** | [other-llms.md](./other-llms.md) | REST API |

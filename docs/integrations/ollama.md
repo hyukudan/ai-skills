@@ -1,6 +1,8 @@
-# Ollama & Local LLM Integration
+# Local LLM Integration (Ollama, vLLM, LM Studio)
 
-**Ai Skills** provides excellent support for local LLMs via Ollama. The built-in SDK wrapper handles tool calling automatically, with fallback options for models that don't support it.
+**Ai Skills** provides excellent support for local LLMs. The built-in SDK wrapper handles tool calling automatically, with fallback options for models that don't support it.
+
+> **Note:** This guide focuses on Ollama. For vLLM or LM Studio, use `create_openai_client()` with a custom `base_url` since they expose OpenAI-compatible endpoints.
 
 ## Quick Start (Recommended)
 
@@ -200,3 +202,35 @@ for model in models:
 - Use smaller models for faster inference
 - Consider `gemma2:2b` for quick responses
 - Use `chat_with_skill()` instead of tool calling for simpler flows
+
+## Other Local LLM Servers
+
+### vLLM
+
+vLLM exposes an OpenAI-compatible API:
+
+```python
+from aiskills.integrations import create_openai_client
+
+client = create_openai_client(
+    base_url="http://localhost:8000/v1",
+    api_key="not-needed",  # vLLM doesn't require a key
+    model="meta-llama/Llama-3.1-8B-Instruct"
+)
+response = client.chat("Help me debug this code")
+```
+
+### LM Studio
+
+LM Studio also exposes an OpenAI-compatible endpoint:
+
+```python
+from aiskills.integrations import create_openai_client
+
+client = create_openai_client(
+    base_url="http://localhost:1234/v1",
+    api_key="lm-studio",
+    model="local-model"
+)
+response = client.chat("What are best practices for API design?")
+```
