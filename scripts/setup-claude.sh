@@ -35,7 +35,7 @@ echo -e "${NC}"
 # -----------------------------------------------------------------------------
 # Step 1: Check Python
 # -----------------------------------------------------------------------------
-echo -e "${YELLOW}[1/5]${NC} Checking Python..."
+echo -e "${YELLOW}[1/6]${NC} Checking Python..."
 
 if command -v python3 &> /dev/null; then
     PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
@@ -48,7 +48,7 @@ fi
 # -----------------------------------------------------------------------------
 # Step 2: Create virtual environment
 # -----------------------------------------------------------------------------
-echo -e "${YELLOW}[2/5]${NC} Setting up virtual environment..."
+echo -e "${YELLOW}[2/6]${NC} Setting up virtual environment..."
 
 if [ -d "$VENV_DIR" ]; then
     echo "  Using existing venv: $VENV_DIR"
@@ -64,7 +64,7 @@ echo -e "  ${GREEN}✓${NC} Virtual environment activated"
 # -----------------------------------------------------------------------------
 # Step 3: Install aiskills
 # -----------------------------------------------------------------------------
-echo -e "${YELLOW}[3/5]${NC} Installing aiskills package..."
+echo -e "${YELLOW}[3/6]${NC} Installing aiskills package..."
 
 pip install --quiet --upgrade pip
 pip install --quiet -e "$REPO_DIR[all]"
@@ -74,7 +74,7 @@ echo -e "  ${GREEN}✓${NC} aiskills installed"
 # -----------------------------------------------------------------------------
 # Step 4: Install bundled skills
 # -----------------------------------------------------------------------------
-echo -e "${YELLOW}[4/5]${NC} Installing skills library..."
+echo -e "${YELLOW}[4/6]${NC} Installing skills library..."
 
 # Install all skills globally
 aiskills install "$REPO_DIR/examples/skills/" --global --yes 2>/dev/null | tail -5
@@ -83,9 +83,17 @@ SKILL_COUNT=$(aiskills list 2>/dev/null | grep -c "│" || echo "0")
 echo -e "  ${GREEN}✓${NC} $SKILL_COUNT skills installed to ~/.aiskills/skills/"
 
 # -----------------------------------------------------------------------------
-# Step 5: Setup Claude Code plugin
+# Step 5: Build search index
 # -----------------------------------------------------------------------------
-echo -e "${YELLOW}[5/5]${NC} Configuring Claude Code plugin..."
+echo -e "${YELLOW}[5/6]${NC} Building search index..."
+
+aiskills search-index index 2>/dev/null
+echo -e "  ${GREEN}✓${NC} Semantic search index built"
+
+# -----------------------------------------------------------------------------
+# Step 6: Setup Claude Code plugin
+# -----------------------------------------------------------------------------
+echo -e "${YELLOW}[6/6]${NC} Configuring Claude Code plugin..."
 
 mkdir -p "$HOME/.claude/plugins"
 
