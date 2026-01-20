@@ -205,6 +205,7 @@ async def handle_skill_read(arguments: dict[str, Any]) -> dict[str, Any]:
             name=input_data.name,
             variables=input_data.variables,
             raw=input_data.raw,
+            include_header=False,  # skill_name already in response, saves tokens
         )
 
         # Also get metadata

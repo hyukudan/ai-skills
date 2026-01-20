@@ -175,6 +175,7 @@ class SkillManager:
         variables: dict | None = None,
         resolve_composition: bool = True,
         raw: bool = False,
+        include_header: bool = True,
     ) -> str:
         """Read skill content for agent consumption.
 
@@ -183,6 +184,7 @@ class SkillManager:
             variables: Optional variables to render
             resolve_composition: If True, resolve extends/includes
             raw: If True, return raw content without rendering templates
+            include_header: If False, omit skill name/path header (saves tokens)
 
         Returns:
             Formatted skill content
@@ -212,7 +214,7 @@ class SkillManager:
             temp_skill = skill.model_copy(update={"content": content})
             content = self.renderer.render(temp_skill, context)
 
-        return self._format_for_agent(skill, content)
+        return self._format_for_agent(skill, content, include_header=include_header)
 
     def _get_resolver(self):
         """Get resolver instance (lazy loaded)."""
@@ -221,9 +223,24 @@ class SkillManager:
             self._resolver = SkillResolver(self)
         return self._resolver
 
-    def _format_for_agent(self, skill: Skill, content: str | None = None) -> str:
-        """Format skill content for agent consumption."""
+    def _format_for_agent(
+        self,
+        skill: Skill,
+        content: str | None = None,
+        include_header: bool = True,
+    ) -> str:
+        """Format skill content for agent consumption.
+
+        Args:
+            skill: The skill object
+            content: Optional pre-processed content
+            include_header: If False, return only content (saves tokens)
+        """
         content = content or skill.content
+
+        if not include_header:
+            return content
+
         lines = [
             f"# Skill: {skill.manifest.name} v{skill.manifest.version}",
             f"Base directory: {skill.path}",

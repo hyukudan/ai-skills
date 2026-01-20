@@ -232,10 +232,11 @@ class SkillRouter:
                 if not skill:
                     continue
 
-                # Read and render the skill
+                # Read and render the skill (no header, skill_name is in result)
                 content = self.manager.read(
                     name=skill_idx.name,
                     variables=variables,
+                    include_header=False,
                 )
 
                 # Get available resources for Phase 3
