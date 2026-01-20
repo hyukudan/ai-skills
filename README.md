@@ -443,7 +443,7 @@ aiskills llm list-models
 
 ## 📦 Bundled Skills
 
-Ai Skills ships with **50+ ready-to-use skills**: 23 marketing/growth skills and 31 development skills. Install them globally to make them available across all your projects:
+Ai Skills ships with **80+ ready-to-use skills** across marketing, development, AI/ML, data, cloud, and product domains. Install them globally to make them available across all your projects:
 
 ```bash
 # Install all bundled skills
@@ -546,11 +546,13 @@ aiskills use "create a referral program for my app"
 ### Development Skills Library
 
 <details>
-<summary><b>🏗️ Backend & Architecture (8 skills)</b></summary>
+<summary><b>🏗️ Backend & Architecture (10 skills)</b></summary>
 
 | Skill | What it does |
 |-------|-------------|
-| `api-design` | Design RESTful and GraphQL APIs. Versioning, error handling, pagination, authentication patterns. |
+| `api-design` | Design RESTful APIs. Versioning, error handling, pagination, authentication patterns. |
+| `graphql-development` | GraphQL patterns. Schema design, resolvers, N+1 problem, subscriptions, error handling. |
+| `websocket-patterns` | WebSocket patterns. Real-time communication, rooms, scaling, heartbeats, reconnection. |
 | `architecture-patterns` | Software architecture patterns. Microservices, monoliths, event-driven, hexagonal architecture. |
 | `async-concurrency` | Async programming patterns. Event loops, coroutines, parallel execution, race conditions. |
 | `caching-strategies` | Implement caching effectively. Redis, in-memory, CDN, cache invalidation strategies. |
@@ -561,8 +563,8 @@ aiskills use "create a referral program for my app"
 
 ```bash
 aiskills use "design a REST API with pagination"
-aiskills use "cursor pagination vs offset"
-aiskills use "fix N+1 query problem"
+aiskills use "GraphQL schema best practices"
+aiskills use "WebSocket room patterns"
 ```
 </details>
 
@@ -649,33 +651,118 @@ aiskills use "git rebase workflow"
 </details>
 
 <details>
-<summary><b>🤖 AI & LLM (4 skills)</b></summary>
+<summary><b>🤖 AI & LLM (10 skills)</b></summary>
 
 | Skill | What it does |
 |-------|-------------|
 | `llm-integration` | Integrate LLMs in applications. API usage, prompt management, streaming, costs. |
 | `prompt-engineering` | Effective prompts. System prompts, few-shot, chain-of-thought, structured output. |
+| `rag-patterns` | RAG architecture. Chunking strategies, embeddings, retrieval, reranking, hybrid search. |
+| `agent-development` | Build AI agents. ReAct, Plan-and-Execute, multi-agent systems, tool design. |
+| `vector-databases` | Vector DB patterns. Pinecone, Qdrant, Chroma, pgvector comparison and usage. |
+| `fine-tuning-guide` | When and how to fine-tune. LoRA/QLoRA, dataset preparation, evaluation. |
+| `ml-ops` | ML in production. Model serving, monitoring, A/B testing, CI/CD for ML. |
+| `llm-testing` | LLM evaluation. Metrics, LLM-as-judge, regression testing, red teaming. |
 | `aiskills-guide` | Using AI Skills system. Creating skills, search, CLI usage, MCP integration. |
 | `skill-creator` | Create new AI Skills. Frontmatter format, best practices, testing skills. |
 
 ```bash
-aiskills use "integrate OpenAI API"
-aiskills use "write effective system prompts"
-aiskills use "create a new skill"
+aiskills use "build a RAG pipeline"
+aiskills use "design an AI agent with tools"
+aiskills use "evaluate LLM responses"
 ```
 </details>
 
 <details>
-<summary><b>📝 Frontend & Docs (2 skills)</b></summary>
+<summary><b>📝 Frontend & Docs (4 skills)</b></summary>
 
 | Skill | What it does |
 |-------|-------------|
 | `frontend-design` | Frontend architecture. Component design, state management, performance. |
+| `nextjs-patterns` | Next.js App Router. Server Components, data fetching, caching, Server Actions. |
+| `tailwind-patterns` | Tailwind CSS patterns. Utility-first, responsive design, dark mode, components. |
 | `documentation-writing` | Technical documentation. API docs, READMEs, architecture decision records. |
 
 ```bash
-aiskills use "structure React components"
+aiskills use "Next.js Server Components patterns"
+aiskills use "Tailwind responsive design"
 aiskills use "write API documentation"
+```
+</details>
+
+### Data & Analytics Skills Library
+
+<details>
+<summary><b>📊 Data Engineering (5 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `sql-optimization` | SQL performance. EXPLAIN plans, indexing strategies, query optimization patterns. |
+| `data-modeling` | Data modeling patterns. Normalization, dimensional modeling, star schema, SCD. |
+| `pandas-data-analysis` | Pandas patterns. Data cleaning, transformation, aggregation, performance tips. |
+| `data-pipelines` | ETL/ELT patterns. Airflow, dbt, incremental loading, data quality checks. |
+| `data-visualization` | Visualization best practices. Chart selection, matplotlib, plotly, dashboards. |
+
+```bash
+aiskills use "optimize slow SQL query"
+aiskills use "design a star schema"
+aiskills use "build an Airflow DAG"
+```
+</details>
+
+### Cloud & Infrastructure Skills Library
+
+<details>
+<summary><b>☁️ Cloud & Infrastructure (4 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `aws-fundamentals` | AWS essentials. IAM, EC2, S3, Lambda, RDS, VPC patterns and best practices. |
+| `serverless-patterns` | Serverless architecture. Lambda optimization, cold starts, event-driven patterns. |
+| `infrastructure-as-code` | IaC patterns. Terraform, CloudFormation, modules, state management, CI/CD. |
+| `cost-optimization` | Cloud cost management. Right-sizing, reserved instances, spot, FinOps practices. |
+
+```bash
+aiskills use "set up AWS IAM policies"
+aiskills use "optimize Lambda cold starts"
+aiskills use "Terraform module patterns"
+```
+</details>
+
+### Database Skills Library
+
+<details>
+<summary><b>🗄️ Advanced Databases (2 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `postgresql-advanced` | Advanced PostgreSQL. CTEs, window functions, JSONB, full-text search, partitioning. |
+| `redis-patterns` | Redis patterns. Caching, rate limiting, queues, pub/sub, distributed locking. |
+
+```bash
+aiskills use "PostgreSQL window functions"
+aiskills use "Redis rate limiting"
+aiskills use "implement distributed lock"
+```
+</details>
+
+### Product & UX Skills Library
+
+<details>
+<summary><b>🎨 Product & UX (5 skills)</b></summary>
+
+| Skill | What it does |
+|-------|-------------|
+| `user-research` | User research methods. Interviews, usability testing, personas, journey mapping. |
+| `product-metrics` | Product analytics. North Star metrics, activation, retention, cohort analysis. |
+| `react-native-patterns` | React Native patterns. Navigation, state management, native modules, performance. |
+| `mobile-performance` | Mobile optimization. Startup time, app size, memory, battery, rendering. |
+| `ux-writing` | UX writing patterns. Microcopy, error messages, empty states, onboarding copy. |
+
+```bash
+aiskills use "design a user interview script"
+aiskills use "define North Star metric"
+aiskills use "write better error messages"
 ```
 </details>
 
