@@ -1,193 +1,370 @@
 ---
 name: social-content
 description: |
-  Create social media content for LinkedIn, Twitter/X, Instagram, and TikTok.
-  Covers platform strategies, post templates, hook formulas, and repurposing.
-version: 1.0.0
+  Generate social media posts for LinkedIn, Twitter/X, Instagram, and TikTok.
+  Provides decision frameworks for post type, hook generation, and tone adaptation.
+version: 2.0.0
 tags: [social-media, content, linkedin, twitter, instagram, tiktok, marketing]
 category: marketing/content
+variables:
+  platform:
+    type: string
+    description: Target platform
+    enum: [linkedin, twitter, instagram, tiktok]
+    default: linkedin
+  niche:
+    type: string
+    description: Content niche
+    enum: [tech, saas, marketing, creator, ecommerce, general]
+    default: saas
+  goal:
+    type: string
+    description: Primary goal of the post
+    enum: [awareness, engagement, conversion, authority]
+    default: engagement
 scope:
   triggers:
     - LinkedIn post
     - Twitter thread
     - social media
     - social content
-    - viral content
+    - generate post
 ---
 
-# Social Content Strategy
+# Social Content Generation
 
-You create engaging content that builds audience and drives results.
+You generate social posts optimized for platform, audience, and goal.
 
-## Platform Quick Guide
+## Decision Framework
 
-### LinkedIn
-**Best for:** B2B, thought leadership, professional networking
-**Frequency:** 3-5x/week
-**What works:** Personal stories with business lessons, contrarian takes, behind-the-scenes, carousels
-**Tips:** First line is everything, links in comments not post, 1,200-1,500 chars performs well
-
-### Twitter/X
-**Best for:** Tech, real-time commentary, niche communities
-**Frequency:** 3-10x/day including replies
-**What works:** Hot takes, teaching threads, engaging with others, memes
-**Tips:** Under 100 chars = more engagement, quote tweets beat plain RTs
-
-### Instagram
-**Best for:** Visual brands, lifestyle, e-commerce
-**Frequency:** 1-2 feed posts/day, 3-10 Stories
-**What works:** Reels (2x reach of static), carousels, interactive Stories
-**Tips:** First frame hooks, use all Story features
-
-### TikTok
-**Best for:** Brand awareness, younger audiences, viral potential
-**Frequency:** 1-4x/day
-**What works:** Native unpolished content, trending sounds, educational-as-entertainment
-**Tips:** Hook in first 1-2 seconds, under 30 seconds, vertical only
-
----
-
-## Content Pillars
-
-Build around 3-5 pillars:
-
-| Pillar | ~% | Example Topics |
-|--------|-----|----------------|
-| Industry insights | 30% | Trends, data, predictions |
-| Behind-the-scenes | 25% | Building, lessons learned |
-| Educational | 25% | How-tos, frameworks |
-| Personal | 15% | Stories, values, hot takes |
-| Promotional | 5% | Product updates, offers |
-
----
-
-## Hook Formulas
-
-**Curiosity:**
-- "I was wrong about [common belief]."
-- "The real reason [outcome] happens isn't what you think."
-- "Nobody talks about [insider knowledge]."
-
-**Story:**
-- "Last week, [unexpected thing] happened."
-- "I almost [big mistake]."
-- "3 years ago, I [past state]. Today, [current state]."
-
-**Value:**
-- "How to [outcome] (without [pain]):"
-- "[Number] [things] that [outcome]:"
-- "Stop [mistake]. Do this instead:"
-
-**Contrarian:**
-- "Unpopular opinion: [bold statement]"
-- "[Common advice] is wrong. Here's why:"
-
----
-
-## Post Templates
-
-### LinkedIn Story
 ```
-[Hook: Unexpected outcome]
+GOAL → POST TYPE → STRUCTURE → HOOK → TONE
 
-[Set scene]
-
-[Challenge faced]
-
-[What happened]
-
-[Turning point]
-
-[Result]
-
-[Lesson for readers]
-
-[Question to engage]
-```
-
-### LinkedIn List
-```
-X things I learned about [topic]:
-
-1. [Point] — [Brief explanation]
-2. [Point] — [Brief explanation]
-3. [Point] — [Brief explanation]
-
-Which resonates most?
-```
-
-### Twitter Thread
-```
-Tweet 1: [Hook + value promise]
-"Here's how to [outcome] (step-by-step):"
-
-Tweet 2-6: [One step per tweet]
-
-Final: [Summary + follow CTA]
+awareness   → story, hot take      → emotion-first
+engagement  → question, poll       → curiosity-first
+conversion  → case study, how-to   → value-first
+authority   → insight, data        → credibility-first
 ```
 
 ---
 
-## Repurposing System
+## Platform Selection
 
-**Blog → Social:**
-- LinkedIn: Key insight + link in comments
-- LinkedIn: Carousel of main points
-- Twitter: Thread of takeaways
-- Instagram: Carousel with visuals, Reel summary
-
-**Video/Podcast → Social:**
-- LinkedIn: Quote graphic
-- Twitter: Thread of best quotes
-- Instagram/TikTok: Short clips
+| Platform | Best When | Avoid When |
+|----------|-----------|------------|
+| LinkedIn | B2B, thought leadership, hiring | Quick updates, memes |
+| Twitter | Tech, real-time, building in public | Long explanations |
+| Instagram | Visual products, lifestyle, personal brand | Text-heavy content |
+| TikTok | Gen Z/Millennial, entertainment, trends | B2B enterprise |
 
 ---
 
-## Engagement Strategy
+{% if platform == "linkedin" %}
+## LinkedIn Generation
 
-**Daily routine (30 min):**
-1. Respond to all comments (5 min)
-2. Comment on 5-10 target accounts (15 min)
-3. Share with insight (5 min)
-4. Send 2-3 DMs (5 min)
+### Post Type by Goal
 
-**Quality comments:** Add insight, share experience, ask thoughtful questions (not "Great post!")
+| Goal | Post Type | Why |
+|------|-----------|-----|
+| awareness | Personal story | Algorithm favors vulnerability |
+| engagement | Contrarian take + question | Drives comments |
+| conversion | Case study with results | Proof sells |
+| authority | Industry insight with data | Establishes expertise |
+
+### Structure Formula
+
+```
+[HOOK] ← 125 chars max, must stop scroll
+⠀
+[PATTERN INTERRUPT] ← whitespace or emoji
+
+[BODY] ← 3-7 short paragraphs, one idea each
+
+[INSIGHT] ← The "aha" moment
+
+[CTA] ← Question or action
+```
+
+### Hook Generation by Type
+
+{% if goal == "awareness" %}
+**Story Hooks:**
+- "I {failed/almost quit/got fired} because of {specific thing}."
+- "{Number} {time} ago, I was {relatable struggle}."
+- "Nobody talks about the {dark side/real cost} of {topic}."
+{% elif goal == "engagement" %}
+**Engagement Hooks:**
+- "Hot take: {common belief} is {wrong/outdated/overrated}."
+- "{Audience}, what's your take on {controversial topic}?"
+- "I {did something unexpected}. Here's why:"
+{% elif goal == "conversion" %}
+**Conversion Hooks:**
+- "We went from {bad metric} to {good metric} in {time}."
+- "Here's the exact {system/framework/template} that {result}:"
+- "{Customer} was {struggling}. Now they're {winning}. Here's how:"
+{% elif goal == "authority" %}
+**Authority Hooks:**
+- "I {analyzed/reviewed/studied} {number} {things}. Here's what I found:"
+- "After {years/projects/clients}, here's what actually matters:"
+- "The {industry} is changing. Here's what {audience} need to know:"
+{% endif %}
+
+### Tone by Niche
+
+{% if niche == "tech" or niche == "saas" %}
+- Direct, no fluff
+- Data when possible
+- Building in public resonates
+- Avoid: corporate speak, buzzwords
+{% elif niche == "marketing" %}
+- Bold claims with proof
+- Frameworks and acronyms work
+- Contrarian takes perform well
+- Avoid: vague "value" statements
+{% elif niche == "creator" %}
+- Personal, vulnerable
+- Behind-the-scenes
+- Numbers and milestones
+- Avoid: preaching, lecturing
+{% elif niche == "ecommerce" %}
+- Customer stories
+- Before/after transformations
+- Social proof heavy
+- Avoid: hard selling
+{% else %}
+- Adapt to audience expectations
+- Test different tones
+- Lead with value
+{% endif %}
+
+### Constraints
+
+- 1,200-1,500 chars optimal
+- No links in body (comment instead)
+- First 125 chars = everything
+- 3+ line breaks for readability
+
+{% elif platform == "twitter" %}
+## Twitter Generation
+
+### Post Type by Goal
+
+| Goal | Format | Why |
+|------|--------|-----|
+| awareness | Single tweet story | Shareability |
+| engagement | Thread with question | Replies boost reach |
+| conversion | Thread with CTA | Value → ask |
+| authority | Data thread | Screenshots get saved |
+
+### Single Tweet Formula
+
+```
+[HOOK - bold claim or question]
+
+[SUPPORT - 2-3 bullet points or one-liner]
+
+[KICKER - unexpected twist or CTA]
+```
+
+### Thread Formula
+
+```
+Tweet 1: Hook + "Thread 🧵"
+         Must work standalone
+
+Tweet 2-7: One point per tweet
+           Action → Result format
+
+Tweet 8: Summary + CTA
+         "If this helped: RT #1, Follow"
+```
+
+### Hook Generation
+
+{% if goal == "awareness" %}
+- "I {achieved thing} by doing the opposite of {common advice}."
+- "Everyone's talking about {X}. Nobody's talking about {Y}."
+{% elif goal == "engagement" %}
+- "Unpopular opinion: {contrarian take}"
+- "{Audience}, which do you prefer: {A} or {B}?"
+{% elif goal == "conversion" %}
+- "Here's the exact {thing} I use to {result}:"
+- "Stop {common mistake}. Do this instead:"
+{% elif goal == "authority" %}
+- "I've {done impressive thing}. Here's what I learned:"
+- "{Number} lessons from {experience}:"
+{% endif %}
+
+### Constraints
+
+- <280 chars for single tweets
+- Threads: 5-12 tweets optimal
+- Under 100 chars = more engagement
+- Quote tweet > plain retweet
+
+{% elif platform == "instagram" %}
+## Instagram Generation
+
+### Post Type by Goal
+
+| Goal | Format | Why |
+|------|--------|-----|
+| awareness | Reel | 2x reach of static |
+| engagement | Carousel with question | Swipes + comments |
+| conversion | Carousel tutorial | Saves = algorithm boost |
+| authority | Behind-the-scenes Reel | Authenticity wins |
+
+### Carousel Structure
+
+```
+Slide 1: Hook (large text, eye-catching)
+         "X things that {outcome}"
+
+Slides 2-8: One point per slide
+            Headline + 2-3 lines
+
+Slide 9: Summary
+Slide 10: CTA + "Save for later"
+```
+
+### Reel Structure
+
+```
+0-3s:   Hook (text + voice)
+3-15s:  Setup (why this matters)
+15-45s: Content (3-5 points, quick cuts)
+45-60s: CTA (follow, comment, save)
+```
+
+### Caption Formula
+
+```
+[Hook - first line is preview]
+
+[Value - short paragraphs]
+
+[CTA - question or action]
+
+.
+.
+.
+
+#hashtag1 #hashtag2 (5-10 relevant)
+```
+
+### Constraints
+
+- Reels: 30-90 seconds
+- Carousels: 5-10 slides
+- Hashtags: 5-10 mid-size (10K-500K posts)
+- Post to Stories to boost reach
+
+{% elif platform == "tiktok" %}
+## TikTok Generation
+
+### Post Type by Goal
+
+| Goal | Format | Why |
+|------|--------|-----|
+| awareness | Trend participation | Algorithm push |
+| engagement | Stitch/Duet | Borrowed audience |
+| conversion | Tutorial with results | Saves drive reach |
+| authority | Story time | Watch time = reach |
+
+### Video Structure
+
+```
+0-2s:   Hook (must stop scroll)
+        Text on screen + voice
+
+2-10s:  Setup (quick context)
+
+10-25s: Content (pattern interrupts every 3-5s)
+
+25-30s: CTA or loop setup
+```
+
+### Hook Templates
+
+```
+"Wait, you're still {common thing}?"
+"POV: You just {achieved something}"
+"The {thing} they don't want you to know"
+"I was today years old when I learned..."
+"{Number} {time} ago, I {did thing}. Here's what happened:"
+```
+
+### Constraints
+
+- First 1-3 seconds = everything
+- 30-60 seconds optimal
+- Trending sounds boost reach
+- Native/unpolished > produced
+- Post 1-4x daily for growth
+
+{% endif %}
 
 ---
 
-## Algorithm Tips
+## Hook Quality Check
 
-**LinkedIn:** First hour matters, comments > reactions, no links in post body
+A good hook has 2+ of these:
 
-**Twitter:** Replies build authority, threads rewarded, first 30 min matters
+| Element | Example |
+|---------|---------|
+| **Curiosity gap** | "Here's what nobody tells you about..." |
+| **Specific number** | "I made $47,000 from one tweet" |
+| **Contrarian angle** | "Stop following this advice" |
+| **Personal stake** | "I almost quit my job because..." |
+| **Time element** | "In 30 days, I..." |
 
-**Instagram:** Reels prioritized, saves/shares > likes, use all features
+**Red flags:**
+- Generic ("Here are some tips...")
+- No stakes ("I want to share...")
+- Too long (>2 lines)
+- Clickbait without payoff
 
 ---
 
-## Weekly Batching
+## Content Pillar Mix
 
-1. Review content pillars
-2. Write 5 LinkedIn posts
-3. Write 3 Twitter threads + daily tweets
-4. Create Instagram carousel + Reel ideas
-5. Schedule everything
-6. Leave room for real-time
+| Pillar | % | Purpose |
+|--------|---|---------|
+| Educational | 30% | Teach something useful |
+| Personal | 25% | Build connection |
+| Industry | 25% | Show expertise |
+| Behind-scenes | 15% | Authenticity |
+| Promotional | 5% | Convert (earn the ask) |
 
 ---
 
-## Metrics That Matter
+## When NOT to Post
 
-**Awareness:** Impressions, reach, follower growth
+- **Don't:** Post about tragedy for engagement
+- **Don't:** Jump on trends that don't fit your brand
+- **Don't:** Cross-post identical content across platforms
+- **Don't:** Post promotional content >10% of the time
+- **Don't:** Engage with negativity publicly
 
-**Engagement:** Engagement rate, comments (high value), shares/saves
+---
 
-**Conversion:** Link clicks, profile visits, DMs, leads attributed
+## Quality Evaluation
+
+Before posting, score 1-5:
+
+| Criteria | Question |
+|----------|----------|
+| Hook | Would I stop scrolling? |
+| Value | Does this teach, inspire, or entertain? |
+| Clarity | Can someone skim and get it? |
+| CTA | Is the next step obvious? |
+| Platform fit | Does format match platform? |
+
+**Post if:** Average ≥4
 
 ---
 
 ## Related Skills
 
-- **@include skill:copywriting**: Long-form content that feeds social
+- **@include skill:copywriting**: Long-form that feeds social
 - **@include skill:launch-strategy**: Coordinating social with launches
-- **@include skill:email-sequence**: Nurturing social audience via email

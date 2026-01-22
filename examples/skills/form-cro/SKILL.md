@@ -1,11 +1,22 @@
 ---
 name: form-cro
 description: |
-  Optimize lead capture, contact, and request forms for higher completion rates.
-  Covers field strategy, layout, validation, and mobile optimization.
-version: 1.0.0
-tags: [forms, lead-capture, conversion, cro, ux, marketing]
+  Decision frameworks for form optimization. Which fields to ask, when to use
+  multi-step, and how to balance data capture with conversion.
+version: 2.0.0
+tags: [forms, lead-capture, conversion, cro, ux]
 category: marketing/cro
+variables:
+  form_type:
+    type: string
+    description: Type of form to optimize
+    enum: [lead-capture, contact, demo-request, quote, signup, checkout]
+    default: lead-capture
+  industry:
+    type: string
+    description: Industry context
+    enum: [saas, ecommerce, agency, finance, healthcare, general]
+    default: saas
 scope:
   triggers:
     - form optimization
@@ -13,164 +24,341 @@ scope:
     - form friction
     - form completion
     - contact form
-    - demo request form
 ---
 
 # Form Conversion Optimization
 
-You maximize form completion while capturing essential data.
+You decide which fields to ask and when, balancing data capture with conversion.
 
-## Field Economics
+## Form Type Selection
 
-Each field costs conversions:
-- 3 fields: Baseline
-- 4-6 fields: -10-25%
-- 7+ fields: -25-50%
+```
+FORM TYPE DECISION:
 
-**For each field ask:**
-- Is this required before we can help?
-- Can we get this later or elsewhere?
-- Can we infer it (email domain → company)?
+What's the goal?
+├── Capture email for nurture → Lead capture (1-2 fields)
+├── Enable contact/inquiry → Contact form (3-4 fields)
+├── Qualify for sales call → Demo request (4-5 fields)
+├── Custom pricing → Quote request (multi-step)
+├── Create account → Signup (2-3 fields + social)
+└── Complete purchase → Checkout (structured sections)
 
----
-
-## Field-Specific Guidance
-
-**Email:** Single field, inline validation, typo detection, mobile keyboard
-
-**Name:** Test single vs. First/Last (single = less friction)
-
-**Phone:** Optional if possible, explain why if required, auto-format
-
-**Company:** Auto-suggest, enrich post-submission (Clearbit), infer from domain
-
-**Dropdowns:** Placeholder "Select one...", searchable if many, radio if <5 options
-
-**Free text:** Optional, expand on focus, reasonable guidance
+Conversion rate correlation:
+├── 1-2 fields → 25%+ conversion
+├── 3-4 fields → 15-20% conversion
+├── 5-6 fields → 10-15% conversion
+└── 7+ fields  → <10% conversion (use multi-step)
+```
 
 ---
 
-## Layout Principles
+## Field Justification Framework
 
-**Field order:**
-1. Easy fields first (name, email)
-2. Build commitment
-3. Sensitive last (phone, company size)
+```
+FOR EACH FIELD ASK:
 
-**Labels:** Always visible (not placeholder-only)
+1. Is this required BEFORE we can help?
+   ├── Yes → Keep
+   └── No → Remove or make optional
 
-**Placeholders:** Examples, not labels
+2. Can we get this later?
+   ├── In the follow-up email → Remove
+   ├── On the sales call → Remove
+   └── From their behavior → Remove
 
-**Single column** > multi-column (higher completion, mobile-friendly)
+3. Can we infer it?
+   ├── Email domain → Company name
+   ├── IP address → Location
+   └── Clearbit/enrichment → Company size, industry
+```
 
----
-
-## Multi-Step Forms
-
-**Use when:** 5+ fields, distinct sections, conditional logic
-
-**Rules:**
-- Progress indicator (step X of Y)
-- Easy before sensitive
-- One topic per step
-- Allow back navigation
-- Save progress
-
-**Progressive commitment:**
-1. Just email
-2. Name, company
-3. Qualifying questions
-4. Contact preferences
-
----
-
-## Validation & Errors
-
-**Inline validation:** On blur (not while typing), clear indicators
-
-**Error messages:**
-- Specific to problem
-- Suggest fix
-- Near the field
-- Don't clear input
-
-Good: "Please enter a valid email (e.g., name@company.com)"
-Bad: "Invalid input"
+| Field | Usually Required | Often Removable |
+|-------|-----------------|-----------------|
+| Email | Yes (always first) | - |
+| First name | If personalization matters | If email marketing only |
+| Last name | If CRM integration | If nurture sequence |
+| Company | If B2B qualification | If can enrich from domain |
+| Phone | If outbound sales | If inbound/self-serve |
+| Job title | If persona-based routing | If single ICP |
+| Company size | If pricing tiers | If ask on call |
+| Budget | Almost never | Ask on sales call |
+| Timeline | Almost never | Ask on sales call |
 
 ---
 
-## Submit Button
+{% if form_type == "lead-capture" %}
+## Lead Capture Form
 
-**Copy formula:** [Action] + [What they get]
-- "Get My Free Quote"
-- "Download the Guide"
-- "Request Demo"
+**Optimal:** Email only, or Email + First Name
 
-**Not:** "Submit", "Send"
+| Decision | Recommendation |
+|----------|----------------|
+| Label | "Work email" qualifies leads, "Email" is generic |
+| CTA | "Get [Thing]" > "Submit" > "Subscribe" |
+| Trust | "No spam. Unsubscribe anytime." reduces anxiety |
+| Placeholder | "you@company.com" reinforces work email |
 
-**States:** Loading (disable + spinner), success (clear next steps), error (focus on issue)
+**When to add First Name:**
+- If email personalization significantly impacts open rates
+- If immediate personalized confirmation page
+
+**When to skip First Name:**
+- Anonymous lead magnet (ebook, tool)
+- Volume > quality priority
+
+{% elif form_type == "contact" %}
+## Contact Form
+
+**Optimal:** Email, Name, Message
+
+| Decision | Recommendation |
+|----------|----------------|
+| Name | Single field tests better than First/Last split |
+| Subject | Skip dropdown, let them write freely |
+| Message | "How can we help?" > "Message" |
+| CTA | "Send Message" + response time expectation |
+
+**Avoid:**
+- Subject dropdown (reduces freedom, rarely used)
+- Phone (unless callback is primary channel)
+- Visible captcha (use invisible reCAPTCHA v3)
+
+{% elif form_type == "demo-request" %}
+## Demo Request Form
+
+**Optimal:** Email, Name, Company, Company Size (optional)
+
+| Decision | Recommendation |
+|----------|----------------|
+| Email | "Work email" - filters personal emails |
+| Company size | Optional dropdown - for routing to sales tiers |
+| Trust elements | "No credit card" + "15 min call" reduces commitment fear |
+
+**Avoid asking (get on the call):**
+- Budget range
+- Timeline
+- Specific pain points (open-ended takes time)
+
+**Consider adding:**
+- Calendar embed after submit (Calendly) - reduces scheduling friction
+- Self-scheduling vs sales assignment based on company size
+
+{% elif form_type == "quote" %}
+## Quote Request (Multi-Step)
+
+**When to use multi-step:**
+- 6+ fields required
+- Complex configuration
+- Industry expectation (insurance, services)
+
+```
+MULTI-STEP STRUCTURE:
+
+Step 1: Easy (email, name)
+├── Lowest friction, captures lead even if abandon
+└── "Let's start with the basics"
+
+Step 2: Requirements (services, options)
+├── Show relevance of questions
+└── "What do you need?"
+
+Step 3: Details (timeline, notes)
+├── Almost done psychology
+└── "Almost there!"
+```
+
+| Pattern | Why |
+|---------|-----|
+| Progress indicator | Shows completion, reduces perceived effort |
+| Back buttons | Reduces fear of commitment |
+| Save on each step | Enables recovery emails |
+| Focus first field | Maintains momentum |
+
+{% elif form_type == "signup" %}
+## Signup Form
+
+```
+SIGNUP PATTERN DECISION:
+
+Product type?
+├── B2B SaaS → Email + Password (social optional)
+├── Developer tool → GitHub/Google primary
+├── Consumer → Social-first (Google, Apple)
+└── High-security → Email + Password only
+
+Progressive profile?
+├── Yes → Email only, profile after activation
+└── No → Email + Password minimum
+```
+
+| Decision | Recommendation |
+|----------|----------------|
+| Social login | Offer 2 max (most used by your audience) |
+| Password | Show/hide toggle, strength indicator |
+| Terms | "By signing up, you agree to Terms" (link, don't checkbox) |
+| Verification | Email verification after, not during signup |
+
+{% elif form_type == "checkout" %}
+## Checkout Form
+
+```
+CHECKOUT STRUCTURE:
+
+1. Email FIRST
+   └── Enables cart recovery even if abandon
+
+2. Shipping
+   └── Use autocomplete heavily
+
+3. Payment
+   └── Trust badges visible
+
+4. Review (optional)
+   └── Only if complex order
+```
+
+| Decision | Recommendation |
+|----------|----------------|
+| Guest checkout | Always offer (account creation post-purchase) |
+| Express payment | Apple Pay, Google Pay above fold |
+| Address | Autocomplete (Google Places) |
+| Promo code | Collapsed by default (reduces "let me find a code") |
+| Order summary | Sticky on desktop, collapsed on mobile |
+
+{% endif %}
 
 ---
 
-## Trust Elements
+{% if industry == "saas" %}
+## SaaS-Specific Decisions
 
-**Near form:**
-- "We'll never share your info"
-- Security badges if sensitive data
-- Expected response time
+| Scenario | Recommendation |
+|----------|----------------|
+| Self-serve vs sales | Company size determines routing |
+| Free trial vs demo | Trial: minimal fields. Demo: qualify |
+| PLG motion | Start with email only, progressive profile |
+| Integration questions | Ask post-signup, not in form |
 
-**Reducing perceived effort:**
-- "Takes 30 seconds"
-- Field count indicator
-- White space
+{% elif industry == "ecommerce" %}
+## E-commerce-Specific Decisions
 
----
+| Scenario | Recommendation |
+|----------|----------------|
+| Guest checkout | Always offer, 30%+ abandon if forced account |
+| Address | Google Places autocomplete mandatory |
+| Express checkout | Apple Pay/Google Pay above fold |
+| Account creation | Offer post-purchase with one click |
 
-## By Form Type
+{% elif industry == "finance" %}
+## Finance-Specific Decisions
 
-**Lead Capture:** Minimum fields (often just email), clear value, test email-only vs. +name
+| Scenario | Recommendation |
+|----------|----------------|
+| SSN, DOB | Progressive disclosure, explain why needed |
+| Long applications | Save progress, email recovery |
+| Compliance | GLBA notice, clear data usage |
+| Trust | Security badges, encryption messaging |
 
-**Contact:** Email + Name + Message, phone optional, set response expectations
+{% elif industry == "healthcare" %}
+## Healthcare-Specific Decisions
 
-**Demo Request:** Name, Email, Company required; calendar embed increases show rate
+| Scenario | Recommendation |
+|----------|----------------|
+| HIPAA | Consent checkbox before sensitive questions |
+| DOB | Date picker (not free text) for accuracy |
+| Insurance | Autocomplete for provider names |
+| Telehealth | Include timezone selection |
 
-**Quote Request:** Multi-step works well, start easy, technical details later
-
----
-
-## Mobile
-
-- Touch targets 44px+
-- Appropriate keyboard types
-- Autofill support
-- Single column only
-- Sticky submit button
-
----
-
-## Measurement
-
-**Track:**
-- Form start rate (page → started)
-- Completion rate (started → submitted)
-- Field drop-off
-- Error rate by field
-- Mobile vs. desktop completion
+{% endif %}
 
 ---
 
-## Psychology
+## Validation Strategy
 
-**Foot-in-the-door:** Small ask first, then more
+```
+VALIDATION TIMING:
 
-**Loss aversion:** Frame around what they'll miss
+When to validate?
+├── On blur (field exit) → Show errors
+├── On input (typing) → Clear errors only
+└── On submit → Focus first error
 
-**Social proof:** "Join 10,000+ marketers" near form
+What to show?
+├── Error → Red border + message below
+├── Success → Green checkmark (optional)
+└── Loading → Spinner on async validation
+```
+
+| Pattern | Why |
+|---------|-----|
+| Validate on blur | Typing validation is annoying |
+| Clear on input | Give immediate feedback they're fixing it |
+| Don't clear value | Never delete what user typed |
+| Email typo detection | "Did you mean @gmail.com?" |
+| Focus first error | User knows where to fix |
+
+---
+
+## Mobile-Specific Decisions
+
+| Decision | Recommendation |
+|----------|----------------|
+| Font size | 16px minimum (prevents iOS zoom) |
+| Touch targets | 44px minimum height |
+| Input types | `type="email"`, `type="tel"` for correct keyboard |
+| Autocomplete | Always set `autocomplete` attributes |
+| Labels | Above input, not placeholder-only (accessibility + clarity) |
+
+---
+
+## A/B Test Priority
+
+| Test | Expected Impact | Metric |
+|------|-----------------|--------|
+| Remove one field | High | Completion rate |
+| Single step vs multi-step | High | Completion rate |
+| CTA copy | Medium | Submit rate |
+| Social login presence | Medium | Signup rate |
+| Trust badges | Low-Medium | Conversion rate |
+| Field order | Low | Completion rate |
+
+---
+
+## Checklist
+
+### Field Decisions
+- [ ] Each field has clear business justification
+- [ ] Removed everything that can be asked later
+- [ ] Removed everything that can be inferred/enriched
+- [ ] Required vs optional is intentional
+
+### UX
+- [ ] Autocomplete attributes on all inputs
+- [ ] Correct input types (email, tel, etc.)
+- [ ] 16px+ font size (mobile)
+- [ ] 44px+ touch targets
+- [ ] Single column layout
+
+### Validation
+- [ ] Validate on blur, clear on input
+- [ ] Error messages suggest fixes
+- [ ] Never clear user input on error
+- [ ] Focus management on errors
+
+### Trust
+- [ ] Privacy statement or link present
+- [ ] Response time expectation set
+- [ ] Security badges if collecting sensitive data
+
+### Accessibility
+- [ ] Labels properly linked (for/id)
+- [ ] Error messages announced (aria-live)
+- [ ] Focus states visible
+- [ ] Full keyboard navigation
 
 ---
 
 ## Related Skills
 
-- **@include skill:signup-flow-cro**: Account creation forms
-- **@include skill:popup-cro**: Forms inside modals
-- **@include skill:page-cro**: Page containing the form
+- `popup-cro` - Forms in modals and overlays
+- `email-sequence` - What happens after form submission

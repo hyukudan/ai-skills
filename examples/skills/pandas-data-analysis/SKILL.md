@@ -1,546 +1,385 @@
 ---
 name: pandas-data-analysis
 description: |
-  Essential pandas patterns for data analysis. Covers data loading, cleaning,
-  transformation, aggregation, merging, and performance optimization with
-  practical examples for common data tasks.
-version: 1.0.0
+  Decision frameworks for pandas operations. When to use groupby vs pivot_table,
+  merge vs concat, apply vs vectorized. Focus on choosing the right approach.
+version: 2.0.0
 tags: [python, pandas, data-analysis, dataframe, data-cleaning]
 category: data/analysis
-trigger_phrases:
-  - "pandas"
-  - "dataframe"
-  - "data cleaning"
-  - "data wrangling"
-  - "data analysis"
-  - "CSV processing"
-  - "merge dataframes"
-  - "groupby"
 variables:
   focus:
     type: string
     description: Primary focus area
     enum: [cleaning, transformation, aggregation, performance]
     default: cleaning
+  data_size:
+    type: string
+    description: Dataset size affects approach
+    enum: [small, medium, large]
+    default: medium
+scope:
+  triggers:
+    - pandas
+    - dataframe
+    - data cleaning
+    - data wrangling
+    - groupby
+    - merge dataframes
 ---
 
-# Pandas Data Analysis Guide
+# Pandas Data Analysis
 
-## Core Philosophy
+You help choose the right pandas approach for data tasks.
 
-**DataFrames are for exploration, not production.** Use pandas for analysis and prototyping. For production pipelines, consider Polars or SQL.
+## Decision Framework
 
-> "If you're writing loops over DataFrame rows, you're doing it wrong."
+```
+TASK → SIZE CHECK → METHOD SELECTION → VALIDATION
 
----
-
-## Quick Reference
-
-```python
-import pandas as pd
-import numpy as np
-
-# Essential operations
-df.head()           # First 5 rows
-df.info()           # Column types and nulls
-df.describe()       # Statistical summary
-df.shape            # (rows, columns)
-df.dtypes           # Column data types
-df.isnull().sum()   # Null count per column
-df.nunique()        # Unique values per column
+Small (<100K rows)  → Any approach works, optimize for readability
+Medium (100K-10M)   → Choose vectorized, avoid apply()
+Large (>10M rows)   → Consider chunking or Polars/SQL
 ```
 
 ---
 
-## 1. Data Loading
+## When to Use What
 
-### Reading Files
-
-```python
-# CSV with common options
-df = pd.read_csv(
-    'data.csv',
-    parse_dates=['date_column'],
-    dtype={'id': str, 'amount': float},
-    usecols=['id', 'date_column', 'amount'],  # Only load needed columns
-    nrows=1000,  # For testing
-    na_values=['', 'NA', 'null', '-'],
-)
-
-# Large files: chunked reading
-chunks = pd.read_csv('large.csv', chunksize=10000)
-for chunk in chunks:
-    process(chunk)
-
-# Excel
-df = pd.read_excel('data.xlsx', sheet_name='Sheet1')
-
-# JSON
-df = pd.read_json('data.json', orient='records')
-
-# SQL
-from sqlalchemy import create_engine
-engine = create_engine('postgresql://user:pass@host/db')
-df = pd.read_sql('SELECT * FROM users', engine)
-```
-
-### Memory Optimization on Load
-
-```python
-# Downcast numeric types
-df = pd.read_csv('data.csv')
-df['int_col'] = pd.to_numeric(df['int_col'], downcast='integer')
-df['float_col'] = pd.to_numeric(df['float_col'], downcast='float')
-
-# Use categories for low-cardinality strings
-df['status'] = df['status'].astype('category')
-
-# Check memory usage
-print(df.memory_usage(deep=True) / 1e6)  # MB per column
-```
+| Task | Use This | Not This | Why |
+|------|----------|----------|-----|
+| Row-wise math | `df['a'] + df['b']` | `df.apply(lambda...)` | 100x faster vectorized |
+| Conditional column | `np.where()` or `np.select()` | `df.apply(if/else)` | Vectorized |
+| String operations | `.str.method()` | `apply(str_func)` | Optimized C code |
+| Group summaries | `groupby().agg()` | Loop over groups | Native optimization |
+| Reshape wide→long | `melt()` | Manual loop | Purpose-built |
+| Reshape long→wide | `pivot_table()` | Nested loops | Handles aggregation |
+| Combine datasets | `merge()` for keys, `concat()` for stacking | Manual alignment | Index-aware |
 
 ---
-
-## 2. Data Cleaning
 
 {% if focus == "cleaning" %}
+## Data Cleaning Decisions
 
-### Handling Missing Values
+### Missing Values: Fill vs Drop
+
+```
+MISSING DATA DECISION:
+
+< 5% missing → Fill with median/mode (numeric) or "Unknown" (categorical)
+5-20% missing → Fill with group statistics or model imputation
+> 20% missing → Consider dropping column or flagging as separate category
+Random pattern → Safe to fill
+Systematic pattern → Investigate cause before filling
+```
+
+**Fill Strategy Selection:**
+
+| Data Type | Pattern | Best Fill |
+|-----------|---------|-----------|
+| Numeric, normal dist | Random | Mean |
+| Numeric, skewed | Random | Median |
+| Numeric, time series | Sequential | Forward fill |
+| Categorical | Random | Mode or "Missing" category |
+| Categorical | Grouped | Group mode via `transform` |
 
 ```python
-# Find missing
-df.isnull().sum()
-df[df['column'].isnull()]  # Rows with nulls
-
-# Fill strategies
-df['col'].fillna(0)                    # Constant
-df['col'].fillna(df['col'].mean())     # Mean
-df['col'].fillna(df['col'].median())   # Median
-df['col'].fillna(method='ffill')       # Forward fill
-df['col'].fillna(method='bfill')       # Backward fill
-
-# Fill with group mean
-df['col'] = df.groupby('category')['col'].transform(
-    lambda x: x.fillna(x.mean())
+# Group-aware fill (better than global mean)
+df['value'] = df.groupby('category')['value'].transform(
+    lambda x: x.fillna(x.median())
 )
-
-# Drop rows/columns with nulls
-df.dropna()                           # Any null
-df.dropna(subset=['important_col'])   # Null in specific column
-df.dropna(thresh=3)                   # Keep rows with at least 3 non-null
 ```
 
-### Handling Duplicates
+### Duplicates: Which to Keep
 
-```python
-# Find duplicates
-df.duplicated().sum()
-df[df.duplicated(subset=['id'], keep=False)]  # Show all duplicates
+```
+DUPLICATE DECISION:
 
-# Remove duplicates
-df.drop_duplicates()
-df.drop_duplicates(subset=['id'], keep='first')
-df.drop_duplicates(subset=['id'], keep='last')
+Exact duplicates → Keep first (or last if data is append-only)
+Partial duplicates (same key, different values):
+  - Most recent timestamp → keep='last'
+  - Most complete record → Sort by null count first
+  - Aggregate values → groupby().agg() instead of drop_duplicates
 ```
 
-### Type Conversion
+### Type Coercion Failures
 
 ```python
-# String to numeric
-df['amount'] = pd.to_numeric(df['amount'], errors='coerce')  # Invalid → NaN
+# Safe conversion with error handling
+df['amount'] = pd.to_numeric(df['amount'], errors='coerce')  # Bad → NaN
+df['date'] = pd.to_datetime(df['date'], errors='coerce')
 
-# String to datetime
-df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d', errors='coerce')
-
-# Fix mixed types
-df['col'] = df['col'].astype(str).str.strip()
-
-# Boolean conversion
-df['flag'] = df['flag'].map({'yes': True, 'no': False, 'Y': True, 'N': False})
+# THEN investigate what failed
+failed = df[df['amount'].isna() & df['amount_original'].notna()]
 ```
 
-### String Cleaning
+### Outlier Handling
 
-```python
-# Access string methods via .str
-df['name'] = df['name'].str.strip()
-df['name'] = df['name'].str.lower()
-df['name'] = df['name'].str.replace(r'\s+', ' ', regex=True)
+| Method | Use When | Threshold |
+|--------|----------|-----------|
+| IQR | Unknown distribution | 1.5×IQR (mild), 3×IQR (extreme) |
+| Z-score | Normal distribution | \|z\| > 3 |
+| Domain rules | Known constraints | Business-specific |
+| Winsorize | Keep rows, cap values | 1st/99th percentile |
 
-# Extract patterns
-df['area_code'] = df['phone'].str.extract(r'\((\d{3})\)')
+{% elif focus == "transformation" %}
+## Transformation Decisions
 
-# Split into columns
-df[['first', 'last']] = df['name'].str.split(' ', n=1, expand=True)
+### Conditional Columns
+
+```
+CONDITIONS DECISION:
+
+2 outcomes → np.where(condition, true_val, false_val)
+3+ outcomes → np.select([cond1, cond2], [val1, val2], default)
+Complex logic → Define function, use vectorized operations inside
+Lookup table → df['col'].map(dict) or merge with lookup df
 ```
 
-### Outlier Detection
-
+**Performance comparison:**
 ```python
-# IQR method
-Q1 = df['value'].quantile(0.25)
-Q3 = df['value'].quantile(0.75)
-IQR = Q3 - Q1
-mask = (df['value'] >= Q1 - 1.5*IQR) & (df['value'] <= Q3 + 1.5*IQR)
-df_clean = df[mask]
-
-# Z-score method
-from scipy import stats
-df['zscore'] = stats.zscore(df['value'])
-df_clean = df[df['zscore'].abs() <= 3]
-```
-
-{% endif %}
-
----
-
-## 3. Data Transformation
-
-{% if focus == "transformation" %}
-
-### Column Operations
-
-```python
-# Create new column
-df['total'] = df['quantity'] * df['price']
-
-# Conditional column
-df['size'] = np.where(df['amount'] > 1000, 'large', 'small')
-
-# Multiple conditions
+# FAST: np.select for multiple conditions
 df['tier'] = np.select(
-    [df['amount'] > 10000, df['amount'] > 1000, df['amount'] > 0],
-    ['platinum', 'gold', 'silver'],
+    [df['amount'] > 10000, df['amount'] > 1000],
+    ['gold', 'silver'],
     default='bronze'
 )
 
-# Apply function
-df['clean_name'] = df['name'].apply(lambda x: x.strip().title())
-
-# Map values
-df['status_code'] = df['status'].map({'active': 1, 'inactive': 0})
+# SLOW: apply with if/else (avoid for >10K rows)
+df['tier'] = df['amount'].apply(lambda x: 'gold' if x > 10000 else ...)
 ```
 
-### Reshaping Data
+### Reshaping: Pivot vs Melt vs Stack
 
+```
+RESHAPE DECISION:
+
+Long → Wide (values become columns):
+  - With aggregation needed → pivot_table()
+  - No aggregation, unique index → pivot()
+  - Multi-level index → unstack()
+
+Wide → Long (columns become values):
+  - Column names to rows → melt()
+  - Multi-level columns → stack()
+```
+
+| Start Shape | End Shape | Use |
+|-------------|-----------|-----|
+| One row per (date, product) | Products as columns | `pivot_table` |
+| Quarters as columns (Q1-Q4) | One row per quarter | `melt` |
+| Hierarchical columns | Flat with multi-index | `stack` |
+
+### Time Series Operations
+
+```
+TIME OPERATION DECISION:
+
+Fixed calendar periods → resample('M'/'W'/'D')
+Rolling calculations → rolling(window=n)
+Expanding from start → expanding()
+Comparisons to prior period → shift(n)
+```
+
+**Common patterns:**
 ```python
-# Pivot: rows to columns
-pivot = df.pivot(index='date', columns='product', values='sales')
+# Month-over-month change
+df['mom_change'] = df.groupby('product')['sales'].pct_change()
 
-# Pivot table with aggregation
-pivot = pd.pivot_table(
-    df,
-    index='region',
-    columns='quarter',
-    values='sales',
-    aggfunc='sum',
-    fill_value=0
+# Rolling 7-day average
+df['rolling_avg'] = df.groupby('product')['sales'].transform(
+    lambda x: x.rolling(7, min_periods=1).mean()
 )
 
-# Melt: columns to rows
-melted = pd.melt(
-    df,
-    id_vars=['id', 'name'],
-    value_vars=['q1', 'q2', 'q3', 'q4'],
-    var_name='quarter',
-    value_name='sales'
-)
-
-# Stack/Unstack
-stacked = df.set_index(['category', 'subcategory']).stack()
-unstacked = stacked.unstack()
+# Year-to-date cumulative
+df['ytd'] = df.groupby([df['date'].dt.year, 'product'])['sales'].cumsum()
 ```
 
-### Date Operations
+{% elif focus == "aggregation" %}
+## Aggregation Decisions
 
-```python
-# Extract date parts
-df['year'] = df['date'].dt.year
-df['month'] = df['date'].dt.month
-df['day_of_week'] = df['date'].dt.dayofweek
-df['is_weekend'] = df['date'].dt.dayofweek >= 5
+### GroupBy vs Pivot Table
 
-# Date arithmetic
-df['days_since'] = (pd.Timestamp.now() - df['date']).dt.days
+```
+AGGREGATION DECISION:
 
-# Resample time series
-daily = df.set_index('date').resample('D').sum()
-monthly = df.set_index('date').resample('M').agg({
-    'sales': 'sum',
-    'customers': 'nunique'
-})
-
-# Rolling windows
-df['rolling_avg'] = df['value'].rolling(window=7).mean()
-df['rolling_sum'] = df['value'].rolling(window=30).sum()
+Results as rows → groupby().agg()
+Results as matrix (row/column headers) → pivot_table()
+Need original rows with group stats → groupby().transform()
+Filter groups by condition → groupby().filter()
 ```
 
-### Window Functions
+| Need | Method | Returns |
+|------|--------|---------|
+| Sum by category | `groupby('cat')['val'].sum()` | Series |
+| Multiple stats | `groupby('cat').agg({'val': ['sum', 'mean']})` | DataFrame |
+| Category × Region matrix | `pivot_table(index='cat', columns='region')` | Wide DataFrame |
+| Add group total to each row | `groupby('cat')['val'].transform('sum')` | Series (same length) |
+
+### Named Aggregations (Preferred)
 
 ```python
-# Rank within groups
-df['rank'] = df.groupby('category')['sales'].rank(ascending=False)
-
-# Cumulative operations
-df['cumsum'] = df.groupby('category')['sales'].cumsum()
-df['pct_of_total'] = df['sales'] / df.groupby('category')['sales'].transform('sum')
-
-# Lag/Lead
-df['prev_value'] = df.groupby('id')['value'].shift(1)
-df['next_value'] = df.groupby('id')['value'].shift(-1)
-df['change'] = df['value'] - df['prev_value']
-```
-
-{% endif %}
-
----
-
-## 4. Aggregation
-
-{% if focus == "aggregation" %}
-
-### GroupBy Basics
-
-```python
-# Single aggregation
-df.groupby('category')['sales'].sum()
-
-# Multiple aggregations
-df.groupby('category')['sales'].agg(['sum', 'mean', 'count'])
-
-# Different aggregations per column
-df.groupby('category').agg({
-    'sales': 'sum',
-    'quantity': 'mean',
-    'customer_id': 'nunique'
-})
-
-# Named aggregations (cleaner output)
-df.groupby('category').agg(
+# Clear, explicit output column names
+result = df.groupby('category').agg(
     total_sales=('sales', 'sum'),
-    avg_quantity=('quantity', 'mean'),
-    unique_customers=('customer_id', 'nunique')
+    avg_order=('order_value', 'mean'),
+    unique_customers=('customer_id', 'nunique'),
+    first_order=('date', 'min'),
 )
-```
-
-### Multi-Level GroupBy
-
-```python
-# Group by multiple columns
-df.groupby(['category', 'region']).agg({
-    'sales': 'sum'
-}).reset_index()
-
-# Unstack for pivot-like result
-df.groupby(['category', 'region'])['sales'].sum().unstack(fill_value=0)
 ```
 
 ### Custom Aggregations
 
 ```python
-# Custom function
-def range_func(x):
-    return x.max() - x.min()
+# Weighted average (can't use built-in)
+def weighted_avg(group):
+    return (group['value'] * group['weight']).sum() / group['weight'].sum()
 
-df.groupby('category')['value'].agg(range_func)
+df.groupby('category').apply(weighted_avg, include_groups=False)
 
-# Multiple custom functions
+# Multiple custom in one pass
 df.groupby('category')['value'].agg([
     ('range', lambda x: x.max() - x.min()),
     ('cv', lambda x: x.std() / x.mean()),  # Coefficient of variation
 ])
-
-# Apply with multiple columns
-def weighted_avg(group):
-    return (group['value'] * group['weight']).sum() / group['weight'].sum()
-
-df.groupby('category').apply(weighted_avg)
 ```
 
-### Filter Groups
+### Transform vs Apply vs Agg
 
+```
+GROUPBY METHOD DECISION:
+
+agg() → Reduce groups to summary (one row per group)
+transform() → Broadcast result back to original shape
+apply() → Flexible but slower, use for complex multi-column logic
+filter() → Keep/drop entire groups based on condition
+```
+
+{% elif focus == "performance" %}
+## Performance Decisions
+
+{% if data_size == "large" %}
+### Large Dataset Strategy (>10M rows)
+
+```
+LARGE DATA DECISION TREE:
+
+Can SQL do it? → Use SQL (pandas for final formatting only)
+One-time analysis? → Chunked processing
+Repeated analysis? → Consider Polars or DuckDB
+Memory constrained? → dtype optimization + chunking
+```
+
+**Chunked aggregation pattern:**
 ```python
-# Keep groups meeting condition
-df.groupby('category').filter(lambda x: x['sales'].sum() > 10000)
+def chunked_groupby(filepath, groupby_cols, agg_dict, chunksize=500000):
+    """Memory-efficient grouped aggregation."""
+    partial_results = []
 
-# Transform (broadcast back to original shape)
-df['category_total'] = df.groupby('category')['sales'].transform('sum')
-df['pct_of_category'] = df['sales'] / df['category_total']
+    for chunk in pd.read_csv(filepath, chunksize=chunksize):
+        partial = chunk.groupby(groupby_cols).agg(agg_dict)
+        partial_results.append(partial)
+
+    # Re-aggregate partials
+    combined = pd.concat(partial_results)
+    return combined.groupby(level=groupby_cols).sum()  # Adjust agg as needed
 ```
 
 {% endif %}
 
----
+### Vectorization Rules
 
-## 5. Merging Data
+```
+VECTORIZATION DECISION:
 
-### Join Types
-
-```python
-# Inner join (only matching rows)
-merged = pd.merge(df1, df2, on='id', how='inner')
-
-# Left join (all from left, matching from right)
-merged = pd.merge(df1, df2, on='id', how='left')
-
-# Full outer join (all rows)
-merged = pd.merge(df1, df2, on='id', how='outer')
-
-# Different column names
-merged = pd.merge(
-    df1, df2,
-    left_on='customer_id',
-    right_on='id',
-    how='left'
-)
-
-# Multiple keys
-merged = pd.merge(df1, df2, on=['id', 'date'], how='left')
+Built-in operation exists? → Use it (sum, mean, str.contains, etc.)
+Element-wise math? → Use operators directly: df['a'] + df['b']
+Conditional logic? → np.where / np.select
+Need apply()? → Write vectorized logic inside if possible
 ```
 
-### Handling Duplicates in Merge
+**Speed comparison (1M rows):**
 
-```python
-# Validate merge (raises error if not 1:1)
-merged = pd.merge(df1, df2, on='id', validate='one_to_one')
-
-# Indicator for debugging
-merged = pd.merge(df1, df2, on='id', how='outer', indicator=True)
-# _merge column: 'left_only', 'right_only', 'both'
-```
-
-### Concatenation
-
-```python
-# Vertical stack
-combined = pd.concat([df1, df2], ignore_index=True)
-
-# Horizontal stack
-combined = pd.concat([df1, df2], axis=1)
-
-# With keys for source tracking
-combined = pd.concat([df1, df2], keys=['source1', 'source2'])
-```
-
----
-
-## 6. Performance Optimization
-
-{% if focus == "performance" %}
-
-### Vectorized Operations
-
-```python
-# BAD: Looping
-result = []
-for idx, row in df.iterrows():
-    result.append(row['a'] + row['b'])
-df['sum'] = result
-
-# GOOD: Vectorized
-df['sum'] = df['a'] + df['b']
-
-# BAD: Apply with Python function
-df['result'] = df['value'].apply(lambda x: x ** 2 + 2 * x + 1)
-
-# GOOD: Vectorized
-df['result'] = df['value'] ** 2 + 2 * df['value'] + 1
-```
+| Approach | Time |
+|----------|------|
+| `df['a'] + df['b']` | ~5ms |
+| `df.apply(lambda r: r['a'] + r['b'], axis=1)` | ~30s |
+| `[row['a'] + row['b'] for _, row in df.iterrows()]` | ~60s |
 
 ### Memory Optimization
 
 ```python
+# Automatic dtype optimization
 def optimize_dtypes(df):
-    """Reduce memory by optimizing dtypes."""
-    for col in df.columns:
-        col_type = df[col].dtype
-
-        if col_type == 'object':
-            # Check if can be category
-            if df[col].nunique() / len(df) < 0.5:
-                df[col] = df[col].astype('category')
-        elif col_type == 'float64':
-            df[col] = pd.to_numeric(df[col], downcast='float')
-        elif col_type == 'int64':
-            df[col] = pd.to_numeric(df[col], downcast='integer')
-
+    for col in df.select_dtypes(include=['int64']).columns:
+        df[col] = pd.to_numeric(df[col], downcast='integer')
+    for col in df.select_dtypes(include=['float64']).columns:
+        df[col] = pd.to_numeric(df[col], downcast='float')
+    for col in df.select_dtypes(include=['object']).columns:
+        if df[col].nunique() / len(df) < 0.5:  # Low cardinality
+            df[col] = df[col].astype('category')
     return df
-
-# Before/after comparison
-print(f"Before: {df.memory_usage(deep=True).sum() / 1e6:.2f} MB")
-df = optimize_dtypes(df)
-print(f"After: {df.memory_usage(deep=True).sum() / 1e6:.2f} MB")
 ```
 
 ### Query Optimization
 
-```python
-# Use query() for complex filters (faster for large DataFrames)
-df.query('age > 30 and status == "active"')
-
-# Use isin() instead of multiple OR conditions
-df[df['status'].isin(['active', 'pending', 'review'])]
-
-# Boolean indexing is fast
-mask = (df['a'] > 5) & (df['b'] < 10)
-df[mask]
 ```
+FILTER DECISION:
 
-### Chunked Processing
-
-```python
-def process_large_file(filepath, chunksize=100000):
-    """Process large file in chunks."""
-    results = []
-
-    for chunk in pd.read_csv(filepath, chunksize=chunksize):
-        # Process each chunk
-        processed = chunk.groupby('category')['value'].sum()
-        results.append(processed)
-
-    # Combine results
-    return pd.concat(results).groupby(level=0).sum()
+Simple condition → Boolean indexing: df[df['a'] > 5]
+Complex conditions → query(): df.query('a > 5 and b < 10')
+Multiple values → isin(): df[df['status'].isin(['A', 'B', 'C'])]
 ```
 
 {% endif %}
 
 ---
 
-## Quick Reference
+## Merge vs Concat vs Join
 
-### Common Operations Cheatsheet
-
-| Task | Code |
-|------|------|
-| Select columns | `df[['a', 'b']]` |
-| Filter rows | `df[df['a'] > 5]` |
-| Sort | `df.sort_values('a', ascending=False)` |
-| Rename columns | `df.rename(columns={'old': 'new'})` |
-| Drop columns | `df.drop(columns=['a', 'b'])` |
-| Reset index | `df.reset_index(drop=True)` |
-| Set index | `df.set_index('id')` |
-| Value counts | `df['col'].value_counts()` |
-| Cross-tab | `pd.crosstab(df['a'], df['b'])` |
-
-### Method Chaining
-
-```python
-# Clean style with method chaining
-result = (
-    df
-    .query('status == "active"')
-    .assign(total=lambda x: x['price'] * x['quantity'])
-    .groupby('category')
-    .agg(total_sales=('total', 'sum'))
-    .sort_values('total_sales', ascending=False)
-    .head(10)
-)
 ```
+COMBINING DATA DECISION:
+
+Same columns, stack rows → concat([df1, df2])
+Same rows, add columns → concat([df1, df2], axis=1)
+Match on key columns → merge(df1, df2, on='key')
+Match on index → df1.join(df2)
+```
+
+| Scenario | Method | Key Param |
+|----------|--------|-----------|
+| Append new records | `concat` | `ignore_index=True` |
+| Add lookup values | `merge` | `how='left'` |
+| Many-to-many relationship | `merge` | Validate with `validate='m:m'` |
+| Debug missing matches | `merge` | `indicator=True` |
+
+---
+
+## Common Antipatterns
+
+| Antipattern | Problem | Fix |
+|-------------|---------|-----|
+| `for idx, row in df.iterrows()` | 1000x slower than vectorized | Use vectorized operations |
+| `df['new'] = df.apply(lambda...)` | Slow for row-wise | `np.where` or vectorized |
+| `df = df.append(row)` | O(n) per append | Collect in list, concat once |
+| Chained indexing `df['a']['b']` | May create copy | `df.loc[:, ('a', 'b')]` |
+| `df[df['a'] == x]['b'] = y` | SettingWithCopyWarning | `df.loc[df['a'] == x, 'b'] = y` |
+| Global fillna before groupby | Loses group patterns | Fill within groups |
+
+---
+
+## When NOT to Use Pandas
+
+| Situation | Better Alternative |
+|-----------|-------------------|
+| >50M rows, complex transforms | Polars, DuckDB, or SQL |
+| Production data pipelines | SQL or Spark |
+| Real-time processing | Native Python or specialized tools |
+| Simple CSV to database | Direct SQL COPY |
+| Already in SQL database | Query there, pandas for final format |
 
 ---
 
 ## Related Skills
 
 - `sql-optimization` - When SQL is better than pandas
-- `data-visualization` - Visualizing pandas DataFrames
-- `polars-guide` - Faster alternative to pandas
+- `polars-guide` - Faster alternative for large data

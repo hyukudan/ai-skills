@@ -1,215 +1,250 @@
 ---
 name: popup-cro
 description: |
-  Create popups, modals, and overlays that convert without damaging user experience.
-  Covers triggers, timing, design, frequency capping, and compliance.
-version: 1.0.0
-tags: [popups, modals, conversion, lead-capture, cro, ux]
+  Decision frameworks for when and how to use popups. Covers trigger selection,
+  timing optimization, and when popups hurt more than help.
+version: 2.0.0
+tags: [popups, modals, conversion, lead-capture, cro]
 category: marketing/cro
+variables:
+  popup_type:
+    type: string
+    description: Type of popup to create
+    enum: [email-capture, exit-intent, slide-in, banner]
+    default: email-capture
+  site_type:
+    type: string
+    description: Type of website
+    enum: [ecommerce, saas, blog, landing-page]
+    default: saas
 scope:
   triggers:
     - exit intent
     - popup
     - modal
-    - lead capture popup
-    - email popup
+    - lead capture
     - overlay
-    - slide-in
 ---
 
 # Popup Optimization
 
-You create popups that convert without annoying users.
+You decide when popups help conversion and when they hurt.
 
-## Core Rules
+## Should You Use a Popup?
 
-**1. Timing determines reception**
-- Too early = interruption
-- Too late = missed
-- Right time = helpful offer
+```
+POPUP DECISION:
 
-**2. Value must justify interruption**
-- Clear, immediate benefit
-- Relevant to context
-- Worth stopping for
+Is the offer valuable enough to interrupt?
+├── No → Don't use popup, use inline or sticky element
+└── Yes ↓
 
-**3. Respect the user**
-- Easy to dismiss
-- Remember preferences
-- Don't trap or trick
+Can user discover the offer otherwise?
+├── Yes, easily → Don't use popup
+└── No/unlikely → Popup may be justified ↓
 
----
-
-## Trigger Strategies
-
-**Exit intent:** Cursor moving to leave
-- Best for: E-commerce, lead gen
-- Mobile alternative: Back button, scroll up
-
-**Scroll-based:** 25-50% depth
-- Indicates engagement
-- Best for: Blog, long-form content
-
-**Time-delayed:** 30-60 seconds (not 5)
-- Proven engagement first
-- Best for: General visitors
-
-**Click-triggered:** User initiates
-- Zero annoyance
-- Best for: Lead magnets, demos
-
-**Page count:** After X pages
-- Research/comparison behavior
-- "Been comparing? Here's a summary..."
-
-**Behavior-based:** Cart abandonment, pricing page visit, repeat visits
+Will it annoy more users than it converts?
+├── Probably → Use less intrusive format (slide-in, banner)
+└── No → Modal popup acceptable
+```
 
 ---
 
-## Popup Types
+## When NOT to Use Popups
 
-### Email Capture
-- Clear value (not just "Subscribe")
-- Single field (email only)
-- Consider incentive
+| Situation | Why | Alternative |
+|-----------|-----|-------------|
+| Mobile traffic >60% | Google penalizes, UX poor | Sticky footer bar |
+| High-intent pages (checkout, pricing) | Interrupts conversion flow | None, let them convert |
+| Bounce rate already >70% | Popup won't help, may hurt | Fix page content first |
+| No clear value exchange | Feels like spam | Build value prop first |
+| Under 500 monthly visitors | Not enough data to optimize | Focus on traffic first |
+| Repeat visitors (logged in) | Already converted | Personalized inline |
 
-### Lead Magnet
-- Show preview of content
-- Specific promise
-- Minimal fields, instant delivery
+---
 
-### Discount/Promo
-- Clear offer (10%, $20, free shipping)
-- Deadline for urgency
-- Easy to apply code
+## Popup Type Selection
 
-### Exit Intent
-- Acknowledge leaving
-- Different from entry offer
-- Address objections
-- "Wait! Before you go..." / "Forget something?"
+```
+TYPE DECISION:
 
-### Slide-In
-- Enters from corner
+What are you offering?
+├── Discount/coupon → Exit-intent (last chance) or banner (sitewide)
+├── Lead magnet/content → Scroll-triggered modal (proven interest)
+├── Newsletter → Slide-in (less intrusive)
+└── Help/chat → Slide-in bottom-right (always)
+
+How intrusive can you be?
+├── Low tolerance (enterprise, professional) → Slide-in or banner only
+├── Medium (general SaaS) → Scroll-triggered modal
+└── Higher tolerance (e-commerce, deals) → Exit-intent acceptable
+```
+
+{% if popup_type == "email-capture" %}
+## Email Capture Popup
+
+**Best trigger:** Scroll 50% (proven engagement) or 30-60 seconds on page
+
+**Conversion drivers:**
+- Specific value prop ("Get our pricing guide" > "Subscribe")
+- Social proof ("Join 50,000+")
+- Immediate value (10% off, free resource)
+
+**Copy formula:**
+```
+Headline: [Specific benefit] + [For whom]
+Subhead: [Social proof] or [Overcome objection]
+CTA: [Get/Claim/Download] + [The thing]
+Dismiss: [Soft decline that implies loss]
+```
+
+{% elif popup_type == "exit-intent" %}
+## Exit Intent Popup
+
+**Detection:** `mouseleave` event with `clientY <= 0` (cursor leaving viewport top)
+
+**When exit-intent works:**
+- E-commerce with cart abandonment
+- Price-sensitive audience (discount offer)
+- Content sites (lead magnet)
+
+**When to skip:**
+- Mobile (no reliable detection)
+- B2B enterprise (feels desperate)
+- Already showed another popup
+
+**Copy approach:** Urgency + last-chance framing
+- "Wait! Before you go..."
+- "Don't miss out on..."
+- Offer should be better than earlier popup
+
+{% elif popup_type == "slide-in" %}
+## Slide-In Popup
+
+**Position:** Bottom-right (standard), bottom-left (less common)
+
+**When to use:**
+- Want visibility without interruption
+- Longer session engagement
+- Chat/help prompts
+- Secondary offers
+
+**Advantages over modal:**
 - Doesn't block content
-- Good for chat, support, secondary CTAs
+- Lower bounce impact
+- Better mobile UX
+- Can persist across pages
 
-### Banner
-- Top of page
-- Single clear message
-- Dismissable
-- Time-limited
+{% elif popup_type == "banner" %}
+## Banner Popup
 
----
+**Position:** Top (most common), bottom (sticky footer)
 
-## Design Essentials
+**When to use:**
+- Sitewide announcements
+- Time-limited offers
+- Shipping thresholds
+- Cookie consent (required)
 
-**Visual hierarchy:**
-1. Headline (largest)
-2. Value/offer
-3. Form/CTA
-4. Close option
+**Key rule:** Account for banner height in CSS (`body { padding-top }`)
 
-**Sizing:** 400-600px wide, don't cover entire screen
-
-**Close button:** Always visible (top right), large enough for mobile, click outside to close
-
-**Mobile:**
-- Bottom slide-ups work well
-- Avoid full-screen overlays
-- Larger touch targets
+{% endif %}
 
 ---
 
-## Copy Formulas
+## Trigger Selection
 
-**Headlines:**
-- "Get [result] in [timeframe]"
-- "Want [desired outcome]?"
-- "Join [X] people who..."
+| Trigger | Conversion Rate | User Perception | Best For |
+|---------|----------------|-----------------|----------|
+| Immediate (0-5s) | Low | Negative (interruption) | Almost never |
+| Time-based (30-60s) | Medium | Neutral | General offers |
+| Scroll % (25-50%) | Higher | Positive (earned) | Content sites |
+| Exit intent | Medium-high | Mixed | Last-chance offers |
+| Click-triggered | Highest | Positive | Lead magnets, demos |
+| Page count (2-3) | Medium | Positive | Return visitors |
 
-**CTAs:**
-- First person: "Get My Discount"
-- Specific: "Send Me the Guide"
-- Value-focused: "Claim My 10% Off"
-
-**Decline:** Polite, not manipulative
-- "No thanks" / "Maybe later"
-- Avoid: "No, I don't want to save money"
+**Rule of thumb:** Later trigger = better reception, slightly lower volume
 
 ---
 
-## Frequency Rules
+## Frequency Capping Strategy
 
-- Maximum once per session
-- Remember dismissals (7-30 days)
-- Exclude converted users
-- Exclude recently dismissed
+```
+FREQUENCY DECISION:
 
-**Targeting:**
-- New vs. returning (different needs)
-- By traffic source (match message)
-- By page type (context-relevant)
+User dismissed popup:
+├── Soft dismiss (X button) → Show again in 7 days
+├── Hard dismiss (decline CTA) → Show again in 30 days
+└── Converted → Never show that popup again
 
-**Exclusions:** Checkout, conversion flows
+User hasn't converted:
+├── First visit → Show after trigger met
+├── Return visit (same day) → Don't show
+└── Return visit (next day+) → Check frequency cap
+```
 
----
-
-## Compliance
-
-**GDPR:** Clear consent, privacy link, don't pre-check
-
-**Accessibility:** Keyboard nav (Tab, Enter, Esc), focus trap, screen reader compatible
-
-**Google:** Intrusive interstitials hurt mobile SEO, avoid full-screen before content
+**Storage key pattern:** `popup_{id}_dismissed` with ISO timestamp
 
 ---
 
-## Measurement
+## Mobile Considerations
 
-**Metrics:**
-- Conversion rate: Impressions → Submissions
-- Close rate: Immediate dismissals
-- Time to close
+```
+MOBILE POPUP RULES:
 
-**Benchmarks:**
-- Email popup: 2-5%
-- Exit intent: 3-10%
-- Click-triggered: 10%+
+Google interstitial penalty applies if:
+- Full-screen popup before main content
+- Popup covers >30% of screen
+- Not a legal requirement (cookie, age gate)
 
----
-
-## By Business Type
-
-**E-commerce:**
-1. Entry/scroll: First-purchase discount
-2. Exit intent: Bigger discount
-3. Cart abandonment: Complete order reminder
-
-**B2B SaaS:**
-1. Click-triggered: Demos, lead magnets
-2. Scroll: Newsletter
-3. Exit intent: Trial or content offer
-
-**Content/Media:**
-1. Scroll: Newsletter after engagement
-2. Page count: After multiple visits
-3. Exit intent: Future content
+Safe on mobile:
+- Top/bottom banners (<15% screen)
+- Slide-ins (<30% screen)
+- Exit-intent (doesn't work anyway)
+- Click-triggered modals
+```
 
 ---
 
-## Psychology
+## Metrics & Benchmarks
 
-**Zeigarnik:** "Continue where you left off"
+| Metric | Good | Great | Investigate |
+|--------|------|-------|-------------|
+| View-to-submit | 3-5% | 5-10% | <2% = offer/timing issue |
+| Close rate <5s | <30% | <20% | >40% = too early/aggressive |
+| Bounce increase | <5% | <2% | >10% = damaging UX |
 
-**Reciprocity:** Give value first, then ask
+**A/B test priority:**
+1. Trigger timing (biggest impact)
+2. Headline copy
+3. Offer value
+4. Design/layout
 
-**Scarcity:** "Limited time" (if genuine)
+---
+
+## Accessibility Requirements
+
+| Requirement | Implementation |
+|-------------|----------------|
+| Focus trap | Tab cycles within popup |
+| Escape close | `keydown` handler for Esc |
+| Screen reader | `role="dialog"`, `aria-modal="true"`, `aria-labelledby` |
+| Focus restore | Return focus to trigger element on close |
+
+---
+
+## Compliance Checklist
+
+| Regulation | Requirement |
+|------------|-------------|
+| GDPR | Consent checkbox unchecked by default, privacy link |
+| Google SEO | No full-screen mobile interstitials |
+| WCAG 2.1 | Keyboard navigable, screen reader compatible |
+| CAN-SPAM | Unsubscribe option in all emails collected |
 
 ---
 
 ## Related Skills
 
-- **@include skill:form-cro**: Form inside popup
-- **@include skill:page-cro**: Page context
-- **@include skill:email-sequence**: Post-popup conversion
+- **@include skill:form-cro**: Optimize form inside popup
+- **@include skill:email-sequence**: Nurture after capture
