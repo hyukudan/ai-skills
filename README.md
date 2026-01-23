@@ -443,7 +443,7 @@ aiskills llm list-models
 
 ## 📦 Bundled Skills
 
-Ai Skills ships with **80+ ready-to-use skills** across marketing, development, AI/ML, data, cloud, and product domains. Install them globally to make them available across all your projects:
+Ai Skills ships with **85+ ready-to-use skills** across marketing, development, AI/ML, data, cloud, and product domains. Install them globally to make them available across all your projects:
 
 ```bash
 # Install all bundled skills
@@ -651,7 +651,7 @@ aiskills use "git rebase workflow"
 </details>
 
 <details>
-<summary><b>🤖 AI & LLM (10 skills)</b></summary>
+<summary><b>🤖 AI & LLM (11 skills)</b></summary>
 
 | Skill | What it does |
 |-------|-------------|
@@ -663,13 +663,14 @@ aiskills use "git rebase workflow"
 | `fine-tuning-guide` | When and how to fine-tune. LoRA/QLoRA, dataset preparation, evaluation. |
 | `ml-ops` | ML in production. Model serving, monitoring, A/B testing, CI/CD for ML. |
 | `llm-testing` | LLM evaluation. Metrics, LLM-as-judge, regression testing, red teaming. |
+| `ltx2-prompting` | LTX-2 video prompting. Cinematic storytelling, camera language, dialogue, visual styling. |
 | `aiskills-guide` | Using AI Skills system. Creating skills, search, CLI usage, MCP integration. |
 | `skill-creator` | Create new AI Skills. Frontmatter format, best practices, testing skills. |
 
 ```bash
 aiskills use "build a RAG pipeline"
 aiskills use "design an AI agent with tools"
-aiskills use "evaluate LLM responses"
+aiskills use "create LTX-2 video prompt"
 ```
 </details>
 
