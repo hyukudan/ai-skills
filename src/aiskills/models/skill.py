@@ -126,6 +126,12 @@ class SkillManifest(BaseModel):
     authors: list[SkillAuthor] = Field(default_factory=list)
     license: str | None = None
 
+    # AgentSkills spec: allowed tools (e.g., "Read Edit Bash")
+    allowed_tools: list[str] = Field(
+        default_factory=list,
+        description="Tools this skill is allowed to use (e.g., ['Read', 'Edit', 'Bash'])",
+    )
+
     # Taxonomy and discovery
     tags: list[str] = Field(default_factory=list)
     category: str | None = None
@@ -285,6 +291,9 @@ class Skill(BaseModel):
             scope_paths=self.manifest.scope.paths,
             scope_languages=self.manifest.scope.languages,
             scope_triggers=self.manifest.scope.triggers,
+            # AgentSkills spec fields
+            license=self.manifest.license,
+            allowed_tools=self.manifest.allowed_tools,
         )
 
     def to_browse_info(self) -> "SkillBrowseInfo":
@@ -374,6 +383,10 @@ class SkillIndex(BaseModel):
     scope_languages: list[str] = Field(default_factory=list)
     scope_triggers: list[str] = Field(default_factory=list)
 
+    # AgentSkills spec fields
+    license: str | None = None
+    allowed_tools: list[str] = Field(default_factory=list)
+
     @computed_field
     @property
     def display_name(self) -> str:
@@ -407,6 +420,10 @@ class SkillBrowseInfo(BaseModel):
     has_variables: bool = False
     has_dependencies: bool = False
 
+    # AgentSkills spec fields
+    license: str | None = None
+    allowed_tools: list[str] = Field(default_factory=list)
+
     @classmethod
     def from_skill(cls, skill: "Skill") -> "SkillBrowseInfo":
         """Create browse info from a full skill."""
@@ -425,6 +442,9 @@ class SkillBrowseInfo(BaseModel):
             source=skill.source,
             has_variables=skill.manifest.has_variables,
             has_dependencies=skill.manifest.has_dependencies,
+            # AgentSkills spec fields
+            license=skill.manifest.license,
+            allowed_tools=skill.manifest.allowed_tools,
         )
 
 

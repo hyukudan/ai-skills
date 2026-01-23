@@ -13,7 +13,10 @@ from ..models.skill import (
     SkillAuthor,
     SkillManifest,
     SkillMetadata,
+    SkillPrecedence,
     SkillRequirements,
+    SkillScope,
+    SkillSecurity,
     SkillStability,
     SkillTrigger,
 )
@@ -128,12 +131,25 @@ class YAMLParser:
         requirements = self._parse_requirements(data.get("requirements"))
         metadata = self._parse_metadata(data.get("metadata", {}))
 
+        # Parse allowed-tools (YAML uses hyphen, Python uses underscore)
+        allowed_tools = self._parse_allowed_tools(data.get("allowed-tools"))
+
+        # Parse scope (NEW: declarative matching)
+        scope = self._parse_scope(data.get("scope", {}))
+
+        # Parse security policy
+        security = self._parse_security(data.get("security", {}))
+
+        # Parse precedence enum
+        precedence = self._parse_precedence(data.get("precedence", "project"))
+
         return SkillManifest(
             name=data["name"],
             description=data["description"],
             version=data.get("version", "1.0.0"),
             authors=authors,
             license=data.get("license"),
+            allowed_tools=allowed_tools,
             tags=data.get("tags", []),
             category=data.get("category"),
             dependencies=dependencies,
@@ -143,8 +159,14 @@ class YAMLParser:
             variables=variables,
             context=data.get("context"),
             triggers=triggers,
+            trigger_phrases=data.get("trigger_phrases", []),
+            scope=scope,
+            priority=data.get("priority", 50),
+            precedence=precedence,
+            security=security,
             requirements=requirements,
             metadata=metadata,
+            tokens_est=data.get("tokens_est"),
         )
 
     def _parse_authors(self, data: list) -> list[SkillAuthor]:
@@ -221,6 +243,51 @@ class YAMLParser:
         if "stability" in data and isinstance(data["stability"], str):
             data["stability"] = SkillStability(data["stability"])
         return SkillMetadata(**data)
+
+    def _parse_allowed_tools(self, data: str | list | None) -> list[str]:
+        """Parse allowed-tools field.
+
+        Supports formats:
+        - "Read Edit Bash" (space-separated string)
+        - ["Read", "Edit", "Bash"] (list)
+        """
+        if not data:
+            return []
+        if isinstance(data, list):
+            return data
+        if isinstance(data, str):
+            return data.split()
+        return []
+
+    def _parse_scope(self, data: dict) -> SkillScope:
+        """Parse scope dict for declarative matching."""
+        if not data:
+            return SkillScope()
+        return SkillScope(
+            paths=data.get("paths", []),
+            languages=data.get("languages", []),
+            triggers=data.get("triggers", []),
+        )
+
+    def _parse_security(self, data: dict) -> SkillSecurity:
+        """Parse security policy dict."""
+        if not data:
+            return SkillSecurity()
+        return SkillSecurity(
+            allowed_resources=data.get("allowed_resources", ["references", "templates"]),
+            allow_execution=data.get("allow_execution", False),
+            sandbox_level=data.get("sandbox_level", "standard"),
+            allowlist=data.get("allowlist", []),
+        )
+
+    def _parse_precedence(self, data: str) -> SkillPrecedence:
+        """Parse precedence tier."""
+        if not data:
+            return SkillPrecedence.PROJECT
+        try:
+            return SkillPrecedence(data)
+        except ValueError:
+            return SkillPrecedence.PROJECT
 
 
 # Singleton instance

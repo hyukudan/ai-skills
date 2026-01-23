@@ -96,6 +96,9 @@ class SkillInfo(BaseModel):
     tags: list[str] = []
     category: str | None = None
     source: str = ""
+    # AgentSkills spec fields
+    license: str | None = None
+    allowed_tools: list[str] = []
 
 
 class SkillBrowseInfo(BaseModel):
@@ -118,6 +121,9 @@ class SkillBrowseInfo(BaseModel):
     source: str = "project"
     has_variables: bool = False
     has_dependencies: bool = False
+    # AgentSkills spec fields
+    license: str | None = None
+    allowed_tools: list[str] = []
 
 
 class SkillResourceInfo(BaseModel):
