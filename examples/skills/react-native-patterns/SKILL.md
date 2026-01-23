@@ -4,6 +4,8 @@ description: |
   React Native patterns for cross-platform mobile development. Covers
   navigation, state management, native modules, performance optimization,
   and platform-specific code.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [react-native, mobile, ios, android, cross-platform]
 category: mobile/react-native

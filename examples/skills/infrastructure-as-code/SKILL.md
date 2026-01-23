@@ -4,6 +4,8 @@ description: |
   Infrastructure as Code (IaC) patterns and best practices. Covers Terraform,
   CloudFormation, Pulumi with practical examples for common infrastructure
   patterns, state management, and CI/CD integration.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [iac, terraform, cloudformation, pulumi, devops, infrastructure]
 category: cloud/iac

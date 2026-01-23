@@ -4,6 +4,8 @@ description: |
   Essential AWS services and patterns for developers. Covers EC2, S3, Lambda, IAM,
   RDS, DynamoDB, and common architectural patterns with practical examples
   and CLI commands.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [aws, cloud, ec2, s3, lambda, iam, devops]
 category: cloud/aws

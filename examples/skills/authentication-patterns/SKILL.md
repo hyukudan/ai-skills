@@ -4,6 +4,8 @@ description: |
   Authentication and authorization patterns for web applications.
   Use when implementing user authentication, session management, OAuth flows,
   JWT tokens, or role-based access control (RBAC).
+license: MIT
+allowed-tools: Read Edit Bash Grep
 version: 1.0.0
 tags: [auth, security, jwt, oauth, session, rbac]
 category: development/security

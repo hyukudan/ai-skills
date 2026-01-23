@@ -3,6 +3,8 @@ name: page-cro
 description: |
   Analyze and optimize marketing pages for conversion. Covers value proposition,
   headlines, CTAs, visual hierarchy, trust signals, and friction reduction.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [cro, conversion, landing-page, optimization, marketing]
 category: marketing/cro

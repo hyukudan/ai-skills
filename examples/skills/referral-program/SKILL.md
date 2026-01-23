@@ -5,6 +5,8 @@ description: |
   This skill covers the science of viral growth, program mechanics that actually work,
   incentive psychology, fraud prevention, and measurement frameworks for sustainable
   word-of-mouth acquisition.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [referral, affiliate, viral, growth, word-of-mouth, ambassador, partner]
 category: marketing/growth

@@ -5,6 +5,8 @@ description: |
   Use when building web components, pages, or applications. Covers framework-specific
   patterns, responsive design, accessibility, and modern CSS techniques. Generates
   creative, polished code that avoids generic AI aesthetics.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [frontend, design, ui, ux, css, responsive, accessibility]
 category: development/frontend

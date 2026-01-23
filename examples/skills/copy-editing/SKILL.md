@@ -3,6 +3,8 @@ name: copy-editing
 description: |
   Systematically improve existing marketing copy through focused editing passes.
   Uses the Seven Sweeps: Clarity, Voice, So What, Prove It, Specificity, Emotion, Risk.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [copywriting, editing, marketing, content, conversion]
 category: marketing/content

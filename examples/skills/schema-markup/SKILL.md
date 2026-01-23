@@ -3,6 +3,8 @@ name: schema-markup
 description: |
   Implement schema.org structured data for rich search results. Covers Organization,
   Article, Product, FAQ, HowTo, BreadcrumbList, LocalBusiness with JSON-LD examples.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [seo, schema, structured-data, json-ld, rich-snippets]
 category: marketing/seo

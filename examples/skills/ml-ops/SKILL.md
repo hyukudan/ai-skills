@@ -4,6 +4,8 @@ description: |
   MLOps practices for deploying and operating ML/LLM systems in production.
   Covers model serving, monitoring, A/B testing, CI/CD for ML, feature stores,
   model registries, and operational best practices.
+license: MIT
+allowed-tools: Read Edit Bash WebFetch
 version: 1.0.0
 tags: [mlops, deployment, monitoring, ml, llm, production, serving]
 category: ai/operations

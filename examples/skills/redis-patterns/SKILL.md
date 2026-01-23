@@ -3,6 +3,8 @@ name: redis-patterns
 description: |
   Decision frameworks for Redis. When to use which data structure,
   caching strategies, and common patterns for queues and real-time features.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 2.0.0
 tags: [redis, caching, queues, pubsub, rate-limiting]
 category: databases/redis

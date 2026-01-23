@@ -5,6 +5,8 @@ description: |
   updating dependencies, handling security vulnerabilities, managing lockfiles,
   or setting up dependency policies. Covers security audits, update strategies,
   and supply chain security.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [dependencies, security, npm, pip, cargo, supply-chain]
 category: development/dependencies

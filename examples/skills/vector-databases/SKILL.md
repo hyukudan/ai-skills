@@ -4,6 +4,8 @@ description: |
   Comprehensive guide to vector databases for similarity search and RAG applications.
   Covers Pinecone, Qdrant, Chroma, pgvector, Weaviate, and Milvus with practical examples,
   indexing strategies, and production considerations.
+license: MIT
+allowed-tools: Read Edit Bash WebFetch
 version: 1.0.0
 tags: [ai, vectors, embeddings, similarity-search, pinecone, qdrant, chroma, pgvector]
 category: ai/vectors

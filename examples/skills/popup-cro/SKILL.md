@@ -3,6 +3,8 @@ name: popup-cro
 description: |
   Decision frameworks for when and how to use popups. Covers trigger selection,
   timing optimization, and when popups hurt more than help.
+license: MIT
+allowed-tools: Read WebFetch
 version: 2.0.0
 tags: [popups, modals, conversion, lead-capture, cro]
 category: marketing/cro

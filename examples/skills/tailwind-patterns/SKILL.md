@@ -4,6 +4,8 @@ description: |
   Tailwind CSS patterns and best practices. Covers utility-first approach,
   responsive design, dark mode, component patterns, custom configuration,
   and performance optimization.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [tailwind, css, styling, responsive, design-system]
 category: development/css

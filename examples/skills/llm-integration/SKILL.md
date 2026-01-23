@@ -2,6 +2,8 @@
 name: llm-integration
 version: 1.0.0
 description: Guide for integrating AI Skills with any LLM provider - from local models to cloud APIs
+license: MIT
+allowed-tools: Read Edit Bash WebFetch
 tags:
   - llm
   - integration

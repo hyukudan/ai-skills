@@ -4,6 +4,8 @@ description: |
   Application security best practices and hardening techniques. Use when securing
   applications, reviewing code for vulnerabilities, implementing authentication,
   or handling sensitive data. Covers OWASP Top 10, secrets management, and defense in depth.
+license: MIT
+allowed-tools: Read Edit Bash Grep
 version: 1.0.0
 tags: [security, owasp, authentication, encryption, vulnerabilities]
 category: development/security

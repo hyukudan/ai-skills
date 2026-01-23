@@ -4,6 +4,8 @@ description: |
   Code refactoring techniques and design patterns. Use when improving existing code,
   eliminating code smells, or restructuring for maintainability. Covers systematic
   refactoring approaches, common patterns, and safe transformation techniques.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [refactoring, patterns, clean-code, design-patterns, maintainability]
 category: development/quality

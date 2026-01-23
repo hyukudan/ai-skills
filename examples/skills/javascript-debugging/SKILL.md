@@ -4,6 +4,8 @@ description: |
   Comprehensive guide for debugging JavaScript and Node.js applications.
   Use when encountering bugs, errors, exceptions, or unexpected behavior.
   Covers browser DevTools, Node.js debugging, async issues, and memory leaks.
+license: MIT
+allowed-tools: Read Edit Bash Grep
 version: 1.0.0
 tags: [javascript, debugging, nodejs, browser, devtools, errors]
 category: development/debugging

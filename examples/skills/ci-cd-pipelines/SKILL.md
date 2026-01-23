@@ -4,6 +4,8 @@ description: |
   Guide for building CI/CD pipelines for automated testing, building, and deployment.
   Use when setting up GitHub Actions, GitLab CI, or other CI/CD systems. Covers
   workflow design, caching, secrets management, and deployment strategies.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [ci-cd, github-actions, gitlab-ci, automation, devops, deployment]
 category: devops/automation

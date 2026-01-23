@@ -3,6 +3,8 @@ name: form-cro
 description: |
   Decision frameworks for form optimization. Which fields to ask, when to use
   multi-step, and how to balance data capture with conversion.
+license: MIT
+allowed-tools: Read WebFetch
 version: 2.0.0
 tags: [forms, lead-capture, conversion, cro, ux]
 category: marketing/cro

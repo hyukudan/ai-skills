@@ -3,6 +3,8 @@ name: paid-ads
 description: |
   Create and optimize paid advertising campaigns across Google, Meta, LinkedIn,
   and other platforms. Covers strategy, targeting, creative, and optimization.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [ppc, paid-media, ads, google-ads, meta-ads, linkedin-ads, advertising]
 category: marketing/ads

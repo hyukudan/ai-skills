@@ -4,6 +4,8 @@ description: |
   Performance optimization techniques for applications and databases. Use when
   profiling slow code, optimizing queries, implementing caching, or improving
   response times. Covers profiling tools, common bottlenecks, and optimization patterns.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [performance, optimization, profiling, caching, scalability]
 category: development/performance

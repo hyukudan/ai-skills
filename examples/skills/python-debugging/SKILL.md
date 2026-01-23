@@ -4,6 +4,8 @@ description: |
   Comprehensive guide for debugging Python applications. Use when encountering
   bugs, errors, exceptions, or unexpected behavior in Python code. Covers
   systematic debugging approaches, common pitfalls, and advanced techniques.
+license: MIT
+allowed-tools: Read Edit Bash Grep
 version: 1.0.0
 tags: [python, debugging, troubleshooting, errors]
 category: development/debugging

@@ -4,6 +4,8 @@ description: |
   Guide for writing effective prompts for large language models. Use when
   crafting prompts for ChatGPT, Claude, Gemini, or local LLMs. Covers prompt
   structure, few-shot learning, chain-of-thought reasoning, and common pitfalls.
+license: MIT
+allowed-tools: Read Edit Bash WebFetch
 version: 1.0.0
 tags: [ai, llm, prompts, chatgpt, claude, gemini]
 category: ai/prompting

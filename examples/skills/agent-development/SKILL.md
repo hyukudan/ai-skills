@@ -4,6 +4,8 @@ description: |
   Patterns for building LLM-powered agents that can reason, plan, and use tools.
   Covers agent architectures (ReAct, Plan-and-Execute), tool design, multi-agent
   systems, memory management, and production deployment considerations.
+license: MIT
+allowed-tools: Read Edit Bash WebFetch
 version: 1.0.0
 tags: [ai, agents, llm, tools, langchain, autogen, crew-ai]
 category: ai/agents

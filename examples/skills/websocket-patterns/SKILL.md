@@ -4,6 +4,8 @@ description: |
   WebSocket patterns for real-time applications. Covers connection management,
   authentication, scaling, heartbeats, and common use cases like chat and
   live updates.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [websocket, realtime, socket-io, ws, live-updates]
 category: development/realtime

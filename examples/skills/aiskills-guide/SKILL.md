@@ -4,6 +4,8 @@ version: 2.0.0
 description: |
   Decision frameworks for using AI Skills effectively. When to invoke skills,
   how to compose them, and integration patterns.
+license: MIT
+allowed-tools: Read Edit
 tags: [meta, guide, skills, llm]
 category: meta
 variables:

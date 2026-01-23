@@ -4,6 +4,8 @@ description: |
   Docker containerization and deployment best practices. Use when containerizing
   applications, creating Docker Compose setups, or optimizing images for production.
   Covers multi-stage builds, security hardening, and orchestration patterns.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [docker, containers, deployment, devops, ci-cd]
 category: devops/containers

@@ -3,6 +3,8 @@ name: ab-test-setup
 description: |
   Design and run A/B tests that produce valid, actionable results. Covers
   hypothesis design, sample size, metrics selection, and analysis.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [ab-test, experimentation, split-test, cro, optimization]
 category: marketing/analytics

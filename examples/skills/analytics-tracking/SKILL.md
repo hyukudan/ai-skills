@@ -3,6 +3,8 @@ name: analytics-tracking
 description: |
   Set up analytics tracking that informs decisions. Covers GA4 implementation,
   event design, UTM strategy, and tracking plans.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [analytics, tracking, ga4, gtm, events, utm, measurement]
 category: marketing/analytics

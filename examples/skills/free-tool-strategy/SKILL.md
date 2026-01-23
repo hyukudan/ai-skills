@@ -3,6 +3,8 @@ name: free-tool-strategy
 description: |
   Build free tools that generate leads and SEO value. Covers tool types, ideation,
   lead capture strategies, MVP scoping, and ROI measurement for engineering as marketing.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.2.0
 tags: [free-tool, engineering-marketing, lead-gen, calculator, generator, seo]
 category: marketing/growth

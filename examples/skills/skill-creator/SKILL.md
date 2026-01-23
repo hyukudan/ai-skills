@@ -4,6 +4,8 @@ description: |
   Guide for creating AI Skills in the ai-skills format. Use when building new skills,
   understanding the SKILL.md structure, or implementing variable-driven content.
   Covers YAML frontmatter, Jinja2 templating, and skill design best practices.
+license: MIT
+allowed-tools: Read Edit
 version: 1.0.0
 tags: [ai-skills, skill-creation, meta, templating, jinja2]
 category: meta/skill-development

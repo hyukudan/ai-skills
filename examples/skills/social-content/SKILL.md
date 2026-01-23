@@ -3,6 +3,8 @@ name: social-content
 description: |
   Generate social media posts for LinkedIn, Twitter/X, Instagram, and TikTok.
   Provides decision frameworks for post type, hook generation, and tone adaptation.
+license: MIT
+allowed-tools: Read WebFetch
 version: 2.0.0
 tags: [social-media, content, linkedin, twitter, instagram, tiktok, marketing]
 category: marketing/content

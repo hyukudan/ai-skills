@@ -3,6 +3,8 @@ name: signup-flow-cro
 description: |
   Optimize signup and registration flows for higher completion rates.
   Covers field optimization, single vs multi-step, social auth, and mobile.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [cro, signup, registration, conversion, onboarding]
 category: marketing/cro

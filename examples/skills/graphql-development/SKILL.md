@@ -4,6 +4,8 @@ description: |
   GraphQL API design and implementation patterns. Covers schema design,
   resolvers, N+1 problem, subscriptions, error handling, and production
   best practices.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [graphql, api, schema, resolvers, apollo]
 category: development/graphql

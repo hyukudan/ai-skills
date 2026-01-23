@@ -3,6 +3,8 @@ name: nodejs-development
 description: |
   Decision frameworks for Node.js development. When to use streams vs buffers,
   how to structure APIs vs CLIs, and common patterns that need attention.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 2.0.0
 tags: [nodejs, javascript, backend, api, server]
 category: development/nodejs

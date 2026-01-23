@@ -3,6 +3,8 @@ name: onboarding-cro
 description: |
   Optimize user activation and first-run experience. Help users reach value quickly
   through onboarding flows, checklists, empty states, and engagement loops.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [onboarding, activation, retention, ux, product, cro]
 category: marketing/cro

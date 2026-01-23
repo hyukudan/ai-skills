@@ -4,6 +4,8 @@ description: |
   Advanced PostgreSQL patterns and features. Covers CTEs, window functions,
   JSONB operations, full-text search, partitioning, and performance tuning
   for production databases.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [postgresql, database, sql, performance, jsonb]
 category: databases/postgresql

@@ -4,6 +4,8 @@ description: |
   Cloud cost optimization strategies and patterns. Covers AWS, GCP, and Azure
   cost analysis, right-sizing, reserved instances, spot instances, and
   FinOps best practices.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [cloud, cost, finops, optimization, aws, gcp, azure]
 category: cloud/finops

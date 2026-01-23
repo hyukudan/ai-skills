@@ -4,6 +4,8 @@ description: |
   Apply behavioral psychology to marketing decisions. Covers persuasion principles,
   cognitive biases, pricing psychology, and decision-making frameworks for ethical
   influence.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [psychology, mental-models, behavioral, persuasion, bias, decision-making]
 category: marketing/growth

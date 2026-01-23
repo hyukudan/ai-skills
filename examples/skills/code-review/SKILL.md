@@ -4,6 +4,8 @@ description: |
   Systematic code review methodology for improving code quality, catching bugs,
   and sharing knowledge. Use when reviewing pull requests, conducting peer reviews,
   or evaluating code changes. Focuses on actionable feedback and collaborative improvement.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [code-review, quality, collaboration, best-practices]
 category: development/quality

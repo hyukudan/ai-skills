@@ -4,6 +4,8 @@ description: |
   Master SaaS pricing from research to execution. This skill provides battle-tested
   frameworks for discovering willingness to pay, structuring tiers that sell, choosing
   value metrics that scale, and communicating price changes without losing customers.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [pricing, monetization, saas, packaging, strategy, value-metric, revenue]
 category: marketing/growth

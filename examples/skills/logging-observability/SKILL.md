@@ -4,6 +4,8 @@ description: |
   Comprehensive guide for application logging, metrics, and distributed tracing.
   Use when implementing observability, debugging production issues, or setting up
   monitoring. Covers structured logging, metrics collection, tracing, and alerting.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [logging, observability, metrics, tracing, monitoring, debugging]
 category: devops/observability

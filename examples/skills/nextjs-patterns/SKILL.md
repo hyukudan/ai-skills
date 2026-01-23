@@ -4,6 +4,8 @@ description: |
   Next.js App Router patterns and best practices. Covers Server Components,
   data fetching, caching, route handlers, middleware, and performance
   optimization for production applications.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [nextjs, react, ssr, app-router, server-components]
 category: development/nextjs

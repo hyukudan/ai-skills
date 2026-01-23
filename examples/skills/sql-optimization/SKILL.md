@@ -4,6 +4,8 @@ description: |
   SQL query optimization patterns and techniques. Covers EXPLAIN plans,
   indexing strategies, query rewriting, join optimization, and database-specific
   tuning for PostgreSQL, MySQL, and SQLite.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [sql, database, optimization, performance, indexing, postgres, mysql]
 category: data/sql

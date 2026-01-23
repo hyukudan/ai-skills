@@ -4,6 +4,8 @@ description: |
   Database performance optimization techniques. Covers cursor pagination, query
   optimization, N+1 problems, connection pooling, indexing strategies, lock
   contention, and slow query diagnosis. Use when queries are slow or DB is bottleneck.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [database, performance, sql, optimization, pagination, queries]
 category: development/backend

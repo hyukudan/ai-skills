@@ -4,6 +4,8 @@ description: |
   Testing and evaluation strategies for LLM applications. Covers evaluation metrics,
   LLM-as-judge patterns, benchmark design, regression testing, red teaming,
   and human evaluation frameworks.
+license: MIT
+allowed-tools: Read Edit Bash WebFetch
 version: 1.0.0
 tags: [ai, testing, llm, evaluation, benchmarks, quality]
 category: ai/testing

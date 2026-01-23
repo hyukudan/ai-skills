@@ -4,6 +4,8 @@ description: |
   Technical documentation writing guide for software projects. Use when writing
   READMEs, API documentation, architecture docs, or user guides. Covers documentation
   structure, writing style, and tools for different documentation types.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [documentation, writing, technical-writing, readme, api-docs]
 category: development/documentation

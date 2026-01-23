@@ -3,6 +3,8 @@ name: paywall-upgrade-cro
 description: |
   Optimize in-app paywalls, upgrade screens, and feature gates. Convert free users
   to paid at moments of experienced value with feature locks, usage limits, and trial flows.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [paywall, upgrade, monetization, freemium, conversion, saas]
 category: marketing/cro

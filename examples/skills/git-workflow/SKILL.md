@@ -4,6 +4,8 @@ description: |
   Best practices for Git version control workflows. Use when managing branches,
   writing commits, creating pull requests, or establishing team Git conventions.
   Covers branching strategies, commit hygiene, and collaborative workflows.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [git, version-control, workflow, collaboration]
 category: development/tooling

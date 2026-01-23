@@ -4,6 +4,8 @@ description: |
   Data visualization best practices and patterns. Covers chart selection,
   storytelling with data, matplotlib, plotly, dashboard design, and
   principles for effective visual communication.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [visualization, charts, matplotlib, plotly, dashboards, data-storytelling]
 category: data/visualization

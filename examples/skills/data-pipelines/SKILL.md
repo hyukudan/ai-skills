@@ -3,6 +3,8 @@ name: data-pipelines
 description: |
   Data pipeline patterns for ETL/ELT workflows. Covers Airflow, dbt, batch vs streaming,
   data quality checks, incremental loading, and pipeline orchestration best practices.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [data, etl, elt, airflow, dbt, pipelines, orchestration]
 category: data/pipelines

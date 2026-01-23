@@ -3,6 +3,8 @@ name: seo-audit
 description: |
   Audit websites for SEO issues. Covers crawlability, indexation, technical SEO,
   on-page optimization, Core Web Vitals, and content quality with prioritized fixes.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [seo, audit, technical-seo, on-page, organic-search]
 category: marketing/seo

@@ -3,6 +3,8 @@ name: email-sequence
 description: |
   Create email sequences and drip campaigns. Covers welcome, nurture, re-engagement,
   onboarding, and billing emails with templates and timing strategies.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.1.0
 tags: [email, marketing, automation, drip-campaign, lifecycle, nurture]
 category: marketing/content

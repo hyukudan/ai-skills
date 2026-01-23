@@ -5,6 +5,8 @@ description: |
   Application security best practices covering OWASP Top 10, secure coding patterns,
   authentication, input validation, and common vulnerability prevention. Use when
   reviewing code for security issues or implementing secure features.
+license: MIT
+allowed-tools: Read Edit Bash Grep
 tags:
   - security
   - owasp

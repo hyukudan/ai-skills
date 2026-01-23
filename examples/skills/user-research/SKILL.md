@@ -4,6 +4,8 @@ description: |
   User research methods and best practices. Covers interviews, surveys,
   usability testing, personas, journey mapping, and synthesizing insights
   into actionable product decisions.
+license: MIT
+allowed-tools: Read WebFetch WebSearch
 version: 1.0.0
 tags: [user-research, ux, interviews, usability, personas]
 category: product/research

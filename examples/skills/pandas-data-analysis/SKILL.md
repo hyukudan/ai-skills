@@ -3,6 +3,8 @@ name: pandas-data-analysis
 description: |
   Decision frameworks for pandas operations. When to use groupby vs pivot_table,
   merge vs concat, apply vs vectorized. Focus on choosing the right approach.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 2.0.0
 tags: [python, pandas, data-analysis, dataframe, data-cleaning]
 category: data/analysis

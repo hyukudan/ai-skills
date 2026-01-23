@@ -3,6 +3,8 @@ name: launch-strategy
 description: |
   Plan and execute product launches with decision frameworks for timing,
   channels, and tactics based on product type and audience.
+license: MIT
+allowed-tools: Read WebFetch
 version: 2.0.0
 tags: [launch, product-hunt, go-to-market, release, announcement, marketing]
 category: marketing/growth

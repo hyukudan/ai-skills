@@ -4,6 +4,8 @@ description: |
   When and how to fine-tune LLMs effectively. Covers decision framework,
   data preparation, OpenAI/Anthropic fine-tuning, LoRA/QLoRA for open-source models,
   cost analysis, and quality assessment techniques.
+license: MIT
+allowed-tools: Read Edit Bash WebFetch
 version: 1.0.0
 tags: [ai, fine-tuning, llm, lora, qlora, openai, training]
 category: ai/training

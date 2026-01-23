@@ -4,6 +4,8 @@ description: |
   Data modeling patterns for transactional and analytical systems. Covers
   normalization, dimensional modeling, star/snowflake schemas, slowly changing
   dimensions, and modern approaches like Data Vault.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [data, modeling, schema, dimensional, warehouse, star-schema]
 category: data/modeling

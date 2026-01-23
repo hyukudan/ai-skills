@@ -4,6 +4,8 @@ description: |
   Testing strategies and patterns for writing effective, maintainable tests.
   Use when writing unit tests, integration tests, or establishing testing
   conventions. Covers test structure, mocking, fixtures, and common patterns.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [testing, unit-tests, tdd, quality]
 category: development/testing

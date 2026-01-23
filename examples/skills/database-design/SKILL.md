@@ -4,6 +4,8 @@ description: |
   Database schema design principles for SQL and NoSQL databases. Use when designing
   new databases, optimizing existing schemas, planning migrations, or choosing between
   database types. Covers normalization, indexing, relationships, and scaling patterns.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [database, sql, nosql, schema, design, postgresql, mongodb]
 category: development/backend

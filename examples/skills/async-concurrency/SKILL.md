@@ -3,6 +3,8 @@ name: async-concurrency
 description: |
   Decision frameworks for async and concurrency. When to use async vs threading
   vs multiprocessing, and how to avoid common pitfalls.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 2.0.0
 tags: [async, concurrency, threading, parallelism, performance]
 category: development/patterns

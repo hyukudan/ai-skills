@@ -4,6 +4,8 @@ description: |
   UX writing patterns for clear, helpful interface copy. Covers microcopy,
   error messages, empty states, onboarding, CTAs, and voice/tone guidelines
   for user-centered communication.
+license: MIT
+allowed-tools: Read WebFetch WebSearch
 version: 1.0.0
 tags: [ux-writing, microcopy, content-design, copywriting, user-experience]
 category: product/ux

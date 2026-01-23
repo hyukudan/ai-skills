@@ -4,6 +4,8 @@ description: |
   Caching patterns and strategies for improving application performance.
   Use when implementing caching layers, choosing cache invalidation strategies,
   or optimizing read-heavy workloads with Redis, Memcached, or in-memory caches.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [caching, redis, performance, scalability, memory]
 category: development/infrastructure

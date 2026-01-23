@@ -4,6 +4,8 @@ description: |
   Product metrics and analytics for data-driven decisions. Covers North Star
   metrics, activation, retention, cohort analysis, funnel optimization, and
   building a metrics hierarchy.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [product-metrics, analytics, retention, growth, kpis]
 category: product/analytics

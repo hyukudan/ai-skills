@@ -4,6 +4,8 @@ description: |
   A curated library of marketing tactics for SaaS products, organized by category
   and stage. Use this when you need marketing inspiration or want to explore
   new channels and approaches.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [marketing, ideas, growth, tactics, strategies, inspiration]
 category: marketing/growth

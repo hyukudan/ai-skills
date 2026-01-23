@@ -3,6 +3,8 @@ name: competitor-alternatives
 description: |
   Create competitor comparison and alternative pages. Covers four formats: singular
   alternative, plural alternatives, you vs competitor, and competitor vs competitor.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [seo, competitor, comparison, alternatives, sales-enablement]
 category: marketing/seo

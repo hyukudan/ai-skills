@@ -3,6 +3,8 @@ name: copywriting
 description: |
   Write marketing copy that converts. Covers headlines, CTAs, page structure,
   and voice guidelines for landing pages, homepages, and feature pages.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [copywriting, marketing, content, conversion, landing-page]
 category: marketing/content

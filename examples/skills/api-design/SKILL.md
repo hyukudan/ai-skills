@@ -4,6 +4,8 @@ description: |
   REST API design principles and best practices. Use when designing new APIs,
   reviewing API contracts, or improving existing endpoints. Covers resource
   modeling, HTTP semantics, error handling, versioning, and documentation.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [api, rest, http, design, backend]
 category: development/architecture

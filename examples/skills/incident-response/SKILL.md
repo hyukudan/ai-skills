@@ -4,6 +4,8 @@ description: |
   Guide for handling production incidents effectively. Use when responding to
   outages, debugging production issues, or establishing incident management
   processes. Covers detection, response, communication, and post-mortems.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [incident, outage, production, on-call, sre, debugging]
 category: devops/reliability

@@ -4,6 +4,8 @@ description: |
   Serverless architecture patterns and best practices. Covers Lambda optimization,
   event-driven design, API patterns, cold starts, and production-ready serverless
   applications across AWS, GCP, and Azure.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [serverless, lambda, cloud-functions, api-gateway, event-driven]
 category: cloud/serverless

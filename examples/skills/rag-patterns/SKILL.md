@@ -4,6 +4,8 @@ description: |
   Retrieval Augmented Generation (RAG) patterns and best practices. Use when building
   systems that combine document retrieval with LLM generation. Covers chunking strategies,
   embedding selection, retrieval methods, reranking, and production optimization.
+license: MIT
+allowed-tools: Read Edit Bash WebFetch
 version: 1.0.0
 tags: [ai, rag, embeddings, retrieval, llm, vector-search, langchain]
 category: ai/rag

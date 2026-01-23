@@ -3,6 +3,8 @@ name: programmatic-seo
 description: |
   Build SEO pages at scale using templates and data. Covers the 12 pSEO playbooks:
   templates, curation, conversions, comparisons, locations, integrations, and more.
+license: MIT
+allowed-tools: Read WebFetch
 version: 1.0.0
 tags: [seo, programmatic-seo, templates, scale, organic-search]
 category: marketing/seo

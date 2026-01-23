@@ -4,6 +4,8 @@ description: |
   React patterns, best practices, and performance optimization techniques.
   Use when building React applications, optimizing components, managing state,
   or implementing common UI patterns. Covers hooks, context, and modern React.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [react, javascript, frontend, hooks, components, state-management]
 category: development/react

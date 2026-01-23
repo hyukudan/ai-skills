@@ -4,6 +4,8 @@ description: |
   Mobile app performance optimization for iOS and Android. Covers startup time,
   app size, memory management, battery optimization, network efficiency, and
   rendering performance.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [mobile, performance, ios, android, optimization]
 category: mobile/performance

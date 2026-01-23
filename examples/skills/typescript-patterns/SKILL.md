@@ -4,6 +4,8 @@ description: |
   TypeScript patterns, best practices, and advanced type techniques.
   Use when writing TypeScript code, designing type-safe APIs, or improving
   type safety in existing codebases. Covers utility types, generics, and patterns.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [typescript, types, generics, patterns, type-safety]
 category: development/typescript

@@ -4,6 +4,8 @@ description: |
   Error handling strategies and exception management patterns. Use when implementing
   error handling, designing logging systems, or building resilient applications.
   Covers exception hierarchies, recovery strategies, and observability.
+license: MIT
+allowed-tools: Read Edit Bash
 version: 1.0.0
 tags: [error-handling, exceptions, logging, resilience, observability]
 category: development/quality
