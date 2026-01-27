@@ -47,23 +47,31 @@ def main(
 
 # Import and register commands
 from .commands import browse as browse_cmd
+from .commands import info as info_cmd
 from .commands import init as init_cmd
 from .commands import install as install_cmd
 from .commands import list as list_cmd
+from .commands import publish as publish_cmd
 from .commands import read as read_cmd
 from .commands import remove as remove_cmd
 from .commands import search as search_cmd
 from .commands import sync as sync_cmd
+from .commands import update as update_cmd
 from .commands import use as use_cmd
 from .commands import validate as validate_cmd
 from .commands import vars as vars_cmd
 
 app.command(name="browse")(browse_cmd.browse)
+app.command(name="info")(info_cmd.info)
 app.command(name="init")(init_cmd.init)
 app.command(name="install")(install_cmd.install)
 app.command(name="list")(list_cmd.list_skills)
+app.command(name="publish")(publish_cmd.publish)
+app.command(name="unpublish")(publish_cmd.unpublish)
 app.command(name="read")(read_cmd.read)
 app.command(name="remove")(remove_cmd.remove)
+app.command(name="update")(update_cmd.update)
+app.command(name="check")(update_cmd.check)
 app.command(name="use")(use_cmd.main)
 app.command(name="validate")(validate_cmd.validate)
 app.command(name="search")(search_cmd.main)

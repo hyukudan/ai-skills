@@ -6,12 +6,18 @@ from .base import FetchedSkill, FetchError, SkillSource
 from .git import GitSource
 from .github import GitHubSource
 from .local import LocalSource
+from .registry import RegistrySource
 
 
 class SourceResolver:
     """Resolves source strings to appropriate handlers.
 
     Tries handlers in order until one matches.
+    Supports:
+    - Local paths: ./skill, /path/to/skill, ~/skills/name
+    - Git URLs: https://github.com/owner/repo.git, git@github.com:owner/repo
+    - GitHub shorthand: owner/repo, owner/repo/skill-name
+    - Registry: registry:skill-name, registry:skill@1.2.3, skill-slug
     """
 
     def __init__(self):
@@ -20,6 +26,7 @@ class SourceResolver:
             LocalSource(),
             GitSource(),
             GitHubSource(),
+            RegistrySource(),  # Last: matches bare slugs as fallback
         ]
 
     def resolve(self, source: str) -> SkillSource:
